@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userProfile, persona, planType } = await req.json();
+    const { userProfile, persona, planType, systemPrompt: providedSystemPrompt } = await req.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -27,9 +27,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (planType === 'workout') {
-      return await generateWorkoutPlanStreaming(model, userProfile, persona);
+      return await generateWorkoutPlanStreaming(model, userProfile, persona, providedSystemPrompt);
     } else if (planType === 'nutrition') {
-      return await generateNutritionPlanStreaming(model, userProfile, persona);
+      return await generateNutritionPlanStreaming(model, userProfile, persona, providedSystemPrompt);
     } else {
       return new Response(
         JSON.stringify({ error: 'Invalid plan type' }),
@@ -48,9 +48,11 @@ export async function POST(req: NextRequest) {
 async function generateWorkoutPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
-  persona: TrainerPersona
+  persona: TrainerPersona,
+  providedSystemPrompt?: string,
 ) {
-  const systemPrompt = getPersonaPrompt(persona);
+  // Use provided system prompt (for custom trainers) or get from personas
+  const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
   const isAdvancedStrength = userProfile.experienceLevel === 'advanced' && userProfile.focusArea === 'strength';
   
@@ -271,7 +273,8 @@ IMPORTANT: Return ONLY valid JSON, no other text. Do not wrap it in markdown cod
 async function generateNutritionPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
-  persona: TrainerPersona
+  persona: TrainerPersona,
+  providedSystemPrompt?: string,
 ) {
   // First, retrieve relevant foods from Pinecone
   console.log('Retrieving foods for profile...');
@@ -283,7 +286,8 @@ async function generateNutritionPlanStreaming(
   
   console.log(`Targets: ${dailyCalories} cal, ${macros.protein}g protein, ${macros.carbs}g carbs, ${macros.fat}g fat`);
   
-  const systemPrompt = getPersonaPrompt(persona);
+  // Use provided system prompt (for custom trainers) or get from personas
+  const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
   const foodsJson = JSON.stringify(foods.slice(0, 150), null, 2);
   

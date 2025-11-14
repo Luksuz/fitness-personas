@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, persona, userProfile } = await req.json();
+    const { messages, persona, userProfile, systemPrompt: providedSystemPrompt } = await req.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Build the message history
-    const systemPrompt = getPersonaPrompt(persona as TrainerPersona);
+    // Use provided system prompt (for custom trainers) or get from personas
+    const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona as TrainerPersona);
     
     let fullSystemPrompt = systemPrompt;
     

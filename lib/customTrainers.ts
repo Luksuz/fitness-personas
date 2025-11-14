@@ -7,7 +7,14 @@ export interface CustomTrainer extends PersonaConfig {
 
 const STORAGE_KEY = 'fitness-demo-custom-trainers';
 
+// Check if we're in a browser environment
+function isBrowser(): boolean {
+  return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+}
+
 export function saveCustomTrainer(trainer: CustomTrainer): void {
+  if (!isBrowser()) return;
+  
   try {
     const trainers = loadCustomTrainers();
     const existingIndex = trainers.findIndex(t => t.id === trainer.id);
@@ -25,6 +32,8 @@ export function saveCustomTrainer(trainer: CustomTrainer): void {
 }
 
 export function loadCustomTrainers(): CustomTrainer[] {
+  if (!isBrowser()) return [];
+  
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -37,6 +46,8 @@ export function loadCustomTrainers(): CustomTrainer[] {
 }
 
 export function deleteCustomTrainer(id: string): void {
+  if (!isBrowser()) return;
+  
   try {
     const trainers = loadCustomTrainers();
     const filtered = trainers.filter(t => t.id !== id);
@@ -47,6 +58,8 @@ export function deleteCustomTrainer(id: string): void {
 }
 
 export function getCustomTrainer(id: string): CustomTrainer | null {
+  if (!isBrowser()) return null;
+  
   const trainers = loadCustomTrainers();
   return trainers.find(t => t.id === id) || null;
 }

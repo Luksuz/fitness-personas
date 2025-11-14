@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { PersonaConfig } from '@/lib/personas';
 import { CustomTrainer, saveCustomTrainer, generateCustomTrainerId } from '@/lib/customTrainers';
 
@@ -11,18 +11,44 @@ interface CreateCustomTrainerModalProps {
   editingTrainer?: CustomTrainer | null;
 }
 
+const defaultFormData: Partial<CustomTrainer> = {
+  name: '',
+  description: '',
+  avatar: '💪',
+  systemPrompt: '',
+  catchphrases: [],
+  image: '',
+};
+
 export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, editingTrainer }: CreateCustomTrainerModalProps) {
-  const [formData, setFormData] = useState<Partial<CustomTrainer>>({
-    name: editingTrainer?.name || '',
-    description: editingTrainer?.description || '',
-    avatar: editingTrainer?.avatar || '💪',
-    systemPrompt: editingTrainer?.systemPrompt || '',
-    catchphrases: editingTrainer?.catchphrases || [],
-    image: editingTrainer?.image || '',
-  });
+  const [formData, setFormData] = useState<Partial<CustomTrainer>>(defaultFormData);
   const [catchphraseInput, setCatchphraseInput] = useState('');
-  const [imagePreview, setImagePreview] = useState<string>(editingTrainer?.image || '');
+  const [imagePreview, setImagePreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load editing trainer data when modal opens or editingTrainer changes
+  useEffect(() => {
+    if (isOpen) {
+      if (editingTrainer) {
+        // Load editing trainer data
+        setFormData({
+          name: editingTrainer.name || '',
+          description: editingTrainer.description || '',
+          avatar: editingTrainer.avatar || '💪',
+          systemPrompt: editingTrainer.systemPrompt || '',
+          catchphrases: editingTrainer.catchphrases || [],
+          image: editingTrainer.image || '',
+        });
+        setImagePreview(editingTrainer.image || '');
+        setCatchphraseInput('');
+      } else {
+        // Reset to defaults for new trainer
+        setFormData(defaultFormData);
+        setImagePreview('');
+        setCatchphraseInput('');
+      }
+    }
+  }, [isOpen, editingTrainer]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,18 +102,7 @@ export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, edit
     saveCustomTrainer(trainer);
     onSave(trainer);
     onClose();
-    
-    // Reset form
-    setFormData({
-      name: '',
-      description: '',
-      avatar: '💪',
-      systemPrompt: '',
-      catchphrases: [],
-      image: '',
-    });
-    setImagePreview('');
-    setCatchphraseInput('');
+    // Form will be reset by useEffect when modal opens again
   };
 
   if (!isOpen) return null;

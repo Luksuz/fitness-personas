@@ -80,6 +80,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
             }],
             persona: trainer,
             userProfile: currentProfile,
+            // Send system prompt for custom trainers
+            systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
           }),
         });
 
@@ -169,6 +171,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
           messages: [...messages, userMessage],
           persona: trainer,
           userProfile: currentProfile,
+          // Send system prompt for custom trainers
+          systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
         }),
       });
 
@@ -261,6 +265,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
           userProfile: currentProfile,
           persona: trainer,
           planType,
+          // Send system prompt for custom trainers
+          systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
         }),
       });
 

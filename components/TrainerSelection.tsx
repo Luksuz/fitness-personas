@@ -35,7 +35,14 @@ export default function TrainerSelection({ onSelect }: TrainerSelectionProps) {
 
   const handleEditCustomTrainer = (e: React.MouseEvent, trainer: CustomTrainer) => {
     e.stopPropagation();
-    setEditingTrainer(trainer);
+    // Reload from localStorage to ensure we have the latest data
+    const updatedTrainers = loadCustomTrainers();
+    const updatedTrainer = updatedTrainers.find(t => t.id === trainer.id);
+    if (updatedTrainer) {
+      setEditingTrainer(updatedTrainer);
+    } else {
+      setEditingTrainer(trainer);
+    }
     setIsCreateModalOpen(true);
   };
 
