@@ -1,0 +1,15 @@
+# Copy this file to .env.local and fill in your API keys
+
+# Anthropic API Key (for chat and plan generation)
+# Get your key from: https://console.anthropic.com/
+ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxx
+
+# OpenAI API Key (for embeddings)
+# Get your key from: https://platform.openai.com/
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxx
+
+# Pinecone Configuration
+# Get your key from: https://www.pinecone.io/
+PINECONE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+PINECONE_INDEX_NAME=fitness-foods
+
