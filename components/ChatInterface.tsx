@@ -5,20 +5,22 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TrainerPersona, UserProfile, Message, WorkoutCard as WorkoutCardType, MealCardData } from '@/lib/types';
-import { TRAINER_PERSONAS } from '@/lib/personas';
+import { getPersonaConfig } from '@/lib/personas';
 import NutritionSummary from './NutritionSummary';
 import MealCard from './MealCard';
 import MealModal from './MealModal';
 import WorkoutCard from './WorkoutCard';
 import WorkoutModal from './WorkoutModal';
+import UserProfileModal from './UserProfileModal';
 
 interface ChatInterfaceProps {
   trainer: TrainerPersona;
   userProfile: UserProfile;
   onReset: () => void;
+  onProfileUpdate?: (profile: UserProfile) => void;
 }
 
-export default function ChatInterface({ trainer, userProfile, onReset }: ChatInterfaceProps) {
+export default function ChatInterface({ trainer, userProfile, onReset, onProfileUpdate }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,14 +32,35 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutCardType | null>(null);
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
   const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [currentProfile, setCurrentProfile] = useState<UserProfile>(userProfile);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasGeneratedGreeting = useRef(false);
 
-  const trainerConfig = TRAINER_PERSONAS[trainer];
+  const trainerConfig = getPersonaConfig(trainer);
+  
+  if (!trainerConfig) {
+    return <div>Trainer not found</div>;
+  }
+
+  // Sync profile when prop changes
+  useEffect(() => {
+    setCurrentProfile(userProfile);
+  }, [userProfile]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleProfileSave = (profile: UserProfile) => {
+    setCurrentProfile(profile);
+    if (onProfileUpdate) {
+      onProfileUpdate(profile);
+    }
+    // Regenerate greeting with new profile
+    hasGeneratedGreeting.current = false;
+    setMessages([]);
+  };
 
   // Generate initial greeting message
   useEffect(() => {
@@ -56,7 +79,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
               content: `Greet me and introduce yourself based on my profile. Let me know you can help with workout and nutrition plans.`,
             }],
             persona: trainer,
-            userProfile,
+            userProfile: currentProfile,
           }),
         });
 
@@ -124,7 +147,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
     };
 
     generateGreeting();
-  }, [trainer, userProfile]);
+  }, [trainer, currentProfile]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -145,7 +168,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
         body: JSON.stringify({
           messages: [...messages, userMessage],
           persona: trainer,
-          userProfile,
+          userProfile: currentProfile,
         }),
       });
 
@@ -235,7 +258,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userProfile,
+          userProfile: currentProfile,
           persona: trainer,
           planType,
         }),
@@ -472,6 +495,13 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
         onClose={() => setIsWorkoutModalOpen(false)}
       />
       
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onSave={handleProfileSave}
+      />
+      
       {/* Nutrition Summary Panel */}
       {nutritionData && dailyTargets && (
         <NutritionSummary
@@ -492,12 +522,26 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
           <div className="flex items-center justify-between w-[70%] mx-auto">
             <div className="flex items-center gap-4 animate-fade-in">
               <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#8FABD4] shadow-lg">
-                <Image
-                  src={trainerConfig.image}
-                  alt={trainerConfig.name}
-                  fill
-                  className="object-cover"
-                />
+                {trainerConfig.image.startsWith('data:') || trainerConfig.image.startsWith('/') ? (
+                  trainerConfig.image.startsWith('data:') ? (
+                    <img
+                      src={trainerConfig.image}
+                      alt={trainerConfig.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image
+                      src={trainerConfig.image}
+                      alt={trainerConfig.name}
+                      fill
+                      className="object-cover"
+                    />
+                  )
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] flex items-center justify-center text-2xl">
+                    {trainerConfig.avatar}
+                  </div>
+                )}
               </div>
               <div>
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
@@ -507,6 +551,13 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsProfileModalOpen(true)}
+                className="px-4 py-2.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-xl font-semibold text-sm transition-all duration-300 text-[#EFECE3]"
+                title="Edit Profile"
+              >
+                ⚙️ Profile
+              </button>
               <button
                 onClick={() => generatePlan('workout')}
                 disabled={generatingPlan !== null}

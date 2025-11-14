@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TrainerSelection from '@/components/TrainerSelection';
 import UserProfileForm from '@/components/UserProfileForm';
 import ChatInterface from '@/components/ChatInterface';
 import { TrainerPersona, UserProfile } from '@/lib/types';
+import { loadUserProfile } from '@/lib/storage';
 
 export default function Home() {
   const [step, setStep] = useState<'trainer' | 'profile' | 'chat'>('trainer');
   const [selectedTrainer, setSelectedTrainer] = useState<TrainerPersona | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // Load profile from localStorage on mount
+  useEffect(() => {
+    const savedProfile = loadUserProfile();
+    if (savedProfile) {
+      setUserProfile(savedProfile);
+    }
+  }, []);
 
   const handleTrainerSelect = (trainer: TrainerPersona) => {
     setSelectedTrainer(trainer);
@@ -21,10 +30,14 @@ export default function Home() {
     setStep('chat');
   };
 
+  const handleProfileUpdate = (profile: UserProfile) => {
+    setUserProfile(profile);
+  };
+
   const handleReset = () => {
     setStep('trainer');
     setSelectedTrainer(null);
-    setUserProfile(null);
+    // Don't clear userProfile on reset, keep it for next time
   };
 
   return (
@@ -34,6 +47,7 @@ export default function Home() {
           trainer={selectedTrainer}
           userProfile={userProfile}
           onReset={handleReset}
+          onProfileUpdate={handleProfileUpdate}
         />
       ) : (
         <div className="container mx-auto px-4 py-8">

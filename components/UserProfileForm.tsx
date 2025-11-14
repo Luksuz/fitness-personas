@@ -1,27 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserProfile } from '@/lib/types';
+import { loadUserProfile, saveUserProfile } from '@/lib/storage';
 
 interface UserProfileFormProps {
   onSubmit: (profile: UserProfile) => void;
   onBack: () => void;
 }
 
+const defaultProfile: Partial<UserProfile> = {
+  height: 175,
+  weight: 75,
+  age: 30,
+  gender: 'male',
+  goal: 'maintenance',
+  activityLevel: 'moderate',
+  experienceLevel: 'intermediate',
+  focusArea: 'general',
+  dietaryRestrictions: [],
+  healthIssues: [],
+  targetMuscles: [],
+};
+
 export default function UserProfileForm({ onSubmit, onBack }: UserProfileFormProps) {
-  const [profile, setProfile] = useState<Partial<UserProfile>>({
-    height: 175,
-    weight: 75,
-    age: 30,
-    gender: 'male',
-    goal: 'maintenance',
-    activityLevel: 'moderate',
-    experienceLevel: 'intermediate',
-    focusArea: 'general',
-    dietaryRestrictions: [],
-    healthIssues: [],
-    targetMuscles: [],
-  });
+  const [profile, setProfile] = useState<Partial<UserProfile>>(defaultProfile);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedProfile = loadUserProfile();
+    if (savedProfile) {
+      setProfile(savedProfile);
+    }
+  }, []);
 
   const [dietaryInput, setDietaryInput] = useState('');
   const [healthInput, setHealthInput] = useState('');
@@ -31,7 +42,9 @@ export default function UserProfileForm({ onSubmit, onBack }: UserProfileFormPro
     e.preventDefault();
     
     if (profile.height && profile.weight && profile.age && profile.experienceLevel && profile.activityLevel) {
-      onSubmit(profile as UserProfile);
+      const fullProfile = profile as UserProfile;
+      saveUserProfile(fullProfile);
+      onSubmit(fullProfile);
     }
   };
 
