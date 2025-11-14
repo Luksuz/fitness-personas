@@ -17,7 +17,7 @@ export default function WorkoutModal({ workout, isOpen, onClose }: WorkoutModalP
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-br from-[#1a1f2e] to-black border border-[#4A70A9]/50 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl shadow-[#8FABD4]/20 animate-slide-in"
+        className="bg-gradient-to-br from-[#1a1f2e] to-black border border-[#4A70A9]/50 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl shadow-[#8FABD4]/20 animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

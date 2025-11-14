@@ -47,7 +47,7 @@ export default function MealModal({ meal, isOpen, onClose }: MealModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-black rounded-2xl shadow-2xl border border-[#4A70A9]/50 max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-slide-in-left"
+        className="bg-black rounded-2xl shadow-2xl border border-[#4A70A9]/50 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
