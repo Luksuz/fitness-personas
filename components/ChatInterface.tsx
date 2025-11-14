@@ -77,7 +77,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
 
         // Create initial message for streaming
         setMessages([{
-          role: 'assistant',
+          role: 'assistant' as const,
           content: '',
         }]);
 
@@ -101,7 +101,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                   greetingContent += data.content;
                   // Update the message with accumulated content
                   setMessages([{
-                    role: 'assistant',
+                    role: 'assistant' as const,
                     content: greetingContent,
                   }]);
                 } else if (data.type === 'error') {
@@ -117,7 +117,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
         console.error('Failed to generate greeting:', error);
         // Fallback to a simple message
         setMessages([{
-          role: 'assistant',
+          role: 'assistant' as const,
           content: 'Hey! Ready to get started? Click the buttons above to generate your workout or nutrition plan!',
         }]);
       }
@@ -166,7 +166,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
 
       // Create initial empty assistant message for streaming
       setMessages(prev => [...prev, {
-        role: 'assistant',
+        role: 'assistant' as const,
         content: '',
       }]);
 
@@ -192,7 +192,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                 setMessages(prev => {
                   const newMessages = [...prev];
                   newMessages[newMessages.length - 1] = {
-                    role: 'assistant',
+                    role: 'assistant' as const,
                     content: assistantContent,
                   };
                   return newMessages;
@@ -211,7 +211,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
       setMessages(prev => [
         ...prev,
         {
-          role: 'assistant',
+          role: 'assistant' as const,
           content: `Error: ${error.message}. Please try again.`,
         },
       ]);
@@ -290,8 +290,8 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                   // Create intro message if it doesn't exist
                   if (introMessageIndex === -1) {
                     setMessages(prev => {
-                      const newMessages = [...prev, {
-                        role: 'assistant',
+                      const newMessages: Message[] = [...prev, {
+                        role: 'assistant' as const,
                         content: introContent,
                       }];
                       introMessageIndex = newMessages.length - 1;
@@ -302,7 +302,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                     setMessages(prev => {
                       const newMessages = [...prev];
                       newMessages[introMessageIndex] = {
-                        role: 'assistant',
+                        role: 'assistant' as const,
                         content: introContent,
                       };
                       return newMessages;
@@ -316,7 +316,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                   if (!hasShownCardsContainer) {
                     hasShownCardsContainer = true;
                     setMessages(prev => [...prev, {
-                      role: 'assistant',
+                      role: 'assistant' as const,
                       content: planType === 'nutrition' ? '__MEAL_CARDS__' : '__WORKOUT_CARDS__',
                     }]);
                   }
@@ -400,8 +400,8 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                   // Create outro message if it doesn't exist
                   if (outroMessageIndex === -1) {
                     setMessages(prev => {
-                      const newMessages = [...prev, {
-                        role: 'assistant',
+                      const newMessages: Message[] = [...prev, {
+                        role: 'assistant' as const,
                         content: outroContent,
                       }];
                       outroMessageIndex = newMessages.length - 1;
@@ -412,7 +412,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                     setMessages(prev => {
                       const newMessages = [...prev];
                       newMessages[outroMessageIndex] = {
-                        role: 'assistant',
+                        role: 'assistant' as const,
                         content: outroContent,
                       };
                       return newMessages;
@@ -423,7 +423,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
                 case 'outro':
                   // Legacy support - complete outro message
                   setMessages(prev => [...prev, {
-                    role: 'assistant',
+                    role: 'assistant' as const,
                     content: data.content,
                   }]);
                   break;
@@ -447,7 +447,7 @@ export default function ChatInterface({ trainer, userProfile, onReset }: ChatInt
       setMessages(prev => [
         ...prev,
         {
-          role: 'assistant',
+          role: 'assistant' as const,
           content: `Error generating ${planType} plan: ${error.message}. Please try again.`,
         },
       ]);
