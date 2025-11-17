@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import ChatInterface from '@/components/ChatInterface';
 import { TrainerPersona, UserProfile } from '@/lib/types';
 import { loadUserProfile } from '@/lib/storage';
@@ -13,8 +12,8 @@ export default function TrainerPage() {
   const router = useRouter();
   const trainerId = params.trainer as TrainerPersona;
   
-  const [step, setStep] = useState<'profile' | 'chat'>('profile');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Validate trainer exists
   const trainerConfig = getPersonaConfig(trainerId);
@@ -28,16 +27,14 @@ export default function TrainerPage() {
 
     // Load profile from localStorage on mount
     const savedProfile = loadUserProfile();
-    if (savedProfile) {
+    if (savedProfile && savedProfile.name && savedProfile.language) {
       setUserProfile(savedProfile);
-      setStep('chat');
+      setIsLoading(false);
+    } else {
+      // No profile found, redirect to home to complete onboarding
+      router.push('/');
     }
   }, [trainerId, trainerConfig, router]);
-
-  const handleProfileSubmit = (profile: UserProfile) => {
-    setUserProfile(profile);
-    setStep('chat');
-  };
 
   const handleProfileUpdate = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -49,7 +46,7 @@ export default function TrainerPage() {
   };
 
   // Show loading while validating
-  if (!trainerConfig) {
+  if (isLoading || !trainerConfig || !userProfile) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000] text-[#EFECE3] flex items-center justify-center">
         <div className="text-center">
@@ -62,30 +59,12 @@ export default function TrainerPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000] text-[#EFECE3]">
-      {step === 'chat' && userProfile ? (
-        <ChatInterface
-          trainer={trainerId}
-          userProfile={userProfile}
-          onReset={handleReset}
-          onProfileUpdate={handleProfileUpdate}
-        />
-      ) : (
-        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
-          <header className="text-center mb-8 sm:mb-12 animate-fade-in">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#8FABD4] via-[#4A70A9] to-[#8FABD4]">
-              AI Fitness Coach
-            </h1>
-            <p className="text-[#8FABD4] text-base sm:text-lg">
-              Your personal trainer powered by AI
-            </p>
-          </header>
-
-          <OnboardingWizard 
-            onSubmit={handleProfileSubmit}
-            onBack={handleReset}
-          />
-        </div>
-      )}
+      <ChatInterface
+        trainer={trainerId}
+        userProfile={userProfile}
+        onReset={handleReset}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </main>
   );
 }

@@ -10,7 +10,7 @@ interface ProgressBarProps {
 
 export default function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
   const progress = (currentStep / totalSteps) * 100;
-  
+
   return (
     <div className="w-full mb-6 sm:mb-8">
       {/* Step indicator text */}
@@ -41,7 +41,7 @@ export default function ProgressBar({ currentStep, totalSteps }: ProgressBarProp
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
           const isCurrent = stepNumber === currentStep;
-          
+
           return (
             <div
               key={stepNumber}

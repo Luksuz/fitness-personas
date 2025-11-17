@@ -98,7 +98,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 
   const handleBack = () => {
     if (currentStep === 0) return;
-    setDirection(-1);
+      setDirection(-1);
     setCurrentStep((prev) => prev - 1);
   };
 
@@ -129,7 +129,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     }
   };
 
-  return (
+        return (
     <div className="w-full px-4 sm:w-[90%] md:w-[85%] lg:w-[75%] xl:w-[70%] mx-auto bg-black/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-[#4A70A9]/50 shadow-2xl">
       {/* Progress Bar - Only show after welcome */}
       {currentStep > 0 && currentStep < 7 && (
@@ -207,8 +207,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <PreferencesStep
               profile={profile}
               onChange={updateProfile}
-              onSkip={handleSkipPreferences}
-            />
+            onSkip={handleSkipPreferences}
+          />
           </StepContainer>
         )}
 
@@ -233,26 +233,26 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
           >
             ← Back
           </motion.button>
-          <motion.button
+            <motion.button
             variants={buttonVariants}
             initial="idle"
             whileHover="hover"
             whileTap="tap"
-            onClick={handleNext}
+              onClick={handleNext}
             disabled={!canProceed()}
-            className={`
+              className={`
               flex-1 py-3 rounded-xl font-semibold text-[#EFECE3] transition-all duration-300 min-h-[50px] touch-manipulation
               ${
                 canProceed()
                   ? 'bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#A8C5E0] hover:to-[#8FABD4] shadow-lg shadow-[#8FABD4]/30'
                   : 'bg-gray-600/50 cursor-not-allowed opacity-50'
               }
-            `}
+              `}
           >
             Next →
-          </motion.button>
-        </div>
-      )}
+            </motion.button>
+          </div>
+        )}
     </div>
   );
 }

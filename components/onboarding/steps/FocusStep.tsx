@@ -12,12 +12,12 @@ interface FocusStepProps {
 
 export default function FocusStep({ profile, onChange }: FocusStepProps) {
   return (
-    <motion.div
-      variants={staggerContainerVariants}
-      initial="hidden"
-      animate="visible"
+      <motion.div
+        variants={staggerContainerVariants}
+        initial="hidden"
+        animate="visible"
       className="space-y-4"
-    >
+      >
       <motion.div variants={staggerItemVariants} className="grid grid-cols-1 gap-4">
         <SelectionCard
           icon="⚡"
@@ -43,13 +43,13 @@ export default function FocusStep({ profile, onChange }: FocusStepProps) {
           onClick={() => onChange({ focusArea: 'hypertrophy' })}
         />
         
-        <SelectionCard
+              <SelectionCard
           icon="🏃"
           title="Endurance & Conditioning"
           subtitle="Cardio fitness and stamina"
           selected={profile.focusArea === 'endurance'}
           onClick={() => onChange({ focusArea: 'endurance' })}
-        />
+              />
       </motion.div>
 
       <motion.p

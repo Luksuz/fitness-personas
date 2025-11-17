@@ -79,8 +79,8 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-semibold text-[#8FABD4]">
-              Height
-            </label>
+            Height
+          </label>
             <button
               type="button"
               onClick={handleHeightUnitToggle}
@@ -108,8 +108,8 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-semibold text-[#8FABD4]">
-              Weight
-            </label>
+            Weight
+          </label>
             <button
               type="button"
               onClick={handleWeightUnitToggle}
@@ -133,45 +133,45 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
         </div>
       </div>
 
-      {/* Age */}
+        {/* Age */}
       <div>
-        <label className="block text-sm font-semibold mb-2 text-[#8FABD4]">
-          Age
-        </label>
-        <input
-          type="number"
-          value={profile.age || 30}
-          onChange={(e) => onChange({ age: Number(e.target.value) })}
+          <label className="block text-sm font-semibold mb-2 text-[#8FABD4]">
+            Age
+          </label>
+          <input
+            type="number"
+            value={profile.age || 30}
+            onChange={(e) => onChange({ age: Number(e.target.value) })}
           className="w-full bg-black/50 border border-[#4A70A9]/50 rounded-xl px-4 py-3 text-[#EFECE3] text-lg focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all"
           required
-        />
+          />
       </div>
 
-      {/* Gender */}
+        {/* Gender */}
       <div>
-        <label className="block text-sm font-semibold mb-3 text-[#8FABD4]">
-          Gender
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <SelectionCard
-            icon="👨"
-            title="Male"
-            selected={profile.gender === 'male'}
-            onClick={() => onChange({ gender: 'male' })}
-          />
-          <SelectionCard
-            icon="👩"
-            title="Female"
-            selected={profile.gender === 'female'}
-            onClick={() => onChange({ gender: 'female' })}
-          />
-          <SelectionCard
-            icon="⚧️"
-            title="Other"
-            selected={profile.gender === 'other'}
-            onClick={() => onChange({ gender: 'other' })}
-          />
-        </div>
+          <label className="block text-sm font-semibold mb-3 text-[#8FABD4]">
+            Gender
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <SelectionCard
+              icon="👨"
+              title="Male"
+              selected={profile.gender === 'male'}
+              onClick={() => onChange({ gender: 'male' })}
+            />
+            <SelectionCard
+              icon="👩"
+              title="Female"
+              selected={profile.gender === 'female'}
+              onClick={() => onChange({ gender: 'female' })}
+            />
+            <SelectionCard
+              icon="⚧️"
+              title="Other"
+              selected={profile.gender === 'other'}
+              onClick={() => onChange({ gender: 'other' })}
+            />
+          </div>
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export default function SelectionCard({
         text-left touch-manipulation
         ${
           selected
-            ? 'border-[#8FABD4] shadow-lg shadow-[#8FABD4]/50'
+          ? 'border-[#8FABD4] shadow-lg shadow-[#8FABD4]/50' 
             : 'border-[#4A70A9]/50 hover:border-[#8FABD4]/50'
         }
         ${className}

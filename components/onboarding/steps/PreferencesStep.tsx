@@ -13,22 +13,22 @@ interface PreferencesStepProps {
 
 export default function PreferencesStep({ profile, onChange, onSkip }: PreferencesStepProps) {
   return (
-    <motion.div
-      variants={staggerContainerVariants}
-      initial="hidden"
-      animate="visible"
+      <motion.div
+        variants={staggerContainerVariants}
+        initial="hidden"
+        animate="visible"
       className="space-y-8"
-    >
-      {/* Skip button */}
+      >
+        {/* Skip button */}
       <motion.div variants={staggerItemVariants} className="flex justify-end">
-        <button
-          type="button"
-          onClick={onSkip}
+          <button
+            type="button"
+            onClick={onSkip}
           className="text-sm sm:text-base text-[#8FABD4] hover:text-[#EFECE3] transition-colors font-semibold underline decoration-dashed underline-offset-4 touch-manipulation"
-        >
-          Skip this step →
-        </button>
-      </motion.div>
+          >
+            Skip this step →
+          </button>
+        </motion.div>
 
       {/* Info note */}
       <motion.div
@@ -40,46 +40,46 @@ export default function PreferencesStep({ profile, onChange, onSkip }: Preferenc
         </p>
       </motion.div>
 
-      {/* Dietary Restrictions */}
-      <motion.div variants={staggerItemVariants}>
-        <PillSelector
-          presets={DIETARY_PRESETS}
-          selected={profile.dietaryRestrictions || []}
-          onChange={(selected) => onChange({ dietaryRestrictions: selected })}
+        {/* Dietary Restrictions */}
+        <motion.div variants={staggerItemVariants}>
+          <PillSelector
+            presets={DIETARY_PRESETS}
+            selected={profile.dietaryRestrictions || []}
+            onChange={(selected) => onChange({ dietaryRestrictions: selected })}
           label="Dietary Preferences (Optional)"
           placeholder="e.g., nut allergy, organic only..."
           allowCustom={true}
-        />
-      </motion.div>
+          />
+        </motion.div>
 
-      {/* Target Muscles */}
-      <motion.div variants={staggerItemVariants}>
-        <PillSelector
-          presets={MUSCLE_PRESETS}
-          selected={profile.targetMuscles || []}
-          onChange={(selected) => onChange({ targetMuscles: selected })}
+        {/* Target Muscles */}
+        <motion.div variants={staggerItemVariants}>
+          <PillSelector
+            presets={MUSCLE_PRESETS}
+            selected={profile.targetMuscles || []}
+            onChange={(selected) => onChange({ targetMuscles: selected })}
           label="Target Muscle Groups (Optional)"
           placeholder="e.g., forearms, traps..."
           allowCustom={true}
-        />
-      </motion.div>
+          />
+        </motion.div>
 
-      {/* Health Issues */}
-      <motion.div variants={staggerItemVariants}>
+        {/* Health Issues */}
+        <motion.div variants={staggerItemVariants}>
         <label className="block text-sm font-semibold mb-3 text-[#8FABD4]">
           Health Considerations (Optional)
         </label>
         <p className="text-xs text-[#8FABD4]/70 mb-3">
           Let us know about any health conditions we should consider (e.g., diabetes, high blood pressure, injuries)
         </p>
-        <PillSelector
-          presets={[]}
-          selected={profile.healthIssues || []}
-          onChange={(selected) => onChange({ healthIssues: selected })}
+          <PillSelector
+            presets={[]}
+            selected={profile.healthIssues || []}
+            onChange={(selected) => onChange({ healthIssues: selected })}
           label=""
           placeholder="e.g., knee injury, asthma..."
-          allowCustom={true}
-        />
+            allowCustom={true}
+          />
       </motion.div>
 
       {/* Privacy note */}

@@ -12,16 +12,16 @@ interface ActivityStepProps {
 
 export default function ActivityStep({ profile, onChange }: ActivityStepProps) {
   return (
-    <motion.div
-      variants={staggerContainerVariants}
-      initial="hidden"
-      animate="visible"
+      <motion.div
+        variants={staggerContainerVariants}
+        initial="hidden"
+        animate="visible"
       className="space-y-8"
-    >
-      {/* Activity Level */}
-      <motion.div variants={staggerItemVariants}>
+      >
+        {/* Activity Level */}
+        <motion.div variants={staggerItemVariants}>
         <label className="block text-sm font-semibold mb-4 text-[#8FABD4]">
-          How active are you?
+            How active are you?
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SelectionCard
@@ -56,19 +56,19 @@ export default function ActivityStep({ profile, onChange }: ActivityStepProps) {
             onClick={() => onChange({ activityLevel: 'active' })}
           />
           
-          <SelectionCard
+              <SelectionCard
             icon="🏋️"
             title="Very Active"
             subtitle="Physical job + exercise"
             selected={profile.activityLevel === 'very_active'}
             onClick={() => onChange({ activityLevel: 'very_active' })}
             className="sm:col-span-2"
-          />
-        </div>
-      </motion.div>
+              />
+          </div>
+        </motion.div>
 
-      {/* Experience Level */}
-      <motion.div variants={staggerItemVariants}>
+        {/* Experience Level */}
+        <motion.div variants={staggerItemVariants}>
         <label className="block text-sm font-semibold mb-4 text-[#8FABD4]">
           What's your training experience?
         </label>
@@ -89,15 +89,15 @@ export default function ActivityStep({ profile, onChange }: ActivityStepProps) {
             onClick={() => onChange({ experienceLevel: 'intermediate' })}
           />
           
-          <SelectionCard
+              <SelectionCard
             icon="🏆"
             title="Advanced"
             subtitle="3+ years of consistent training"
             selected={profile.experienceLevel === 'advanced'}
             onClick={() => onChange({ experienceLevel: 'advanced' })}
-          />
-        </div>
+              />
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
   );
 }

@@ -99,7 +99,7 @@ export default function Home() {
               <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-[#EFECE3]">
                 {userProfile.language === 'hr' ? 'Svi Treneri' : 'All Trainers'}
               </h2>
-              <TrainerSelection onSelect={handleTrainerSelect} />
+        <TrainerSelection onSelect={handleTrainerSelect} />
             </div>
           </>
         )}

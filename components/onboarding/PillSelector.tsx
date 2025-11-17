@@ -57,7 +57,7 @@ export default function PillSelector({
       </label>
 
       {/* Preset pills */}
-      <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
         {presets.map((preset) => {
           const isSelected = selected.includes(preset);
           return (
@@ -81,7 +81,7 @@ export default function PillSelector({
             </motion.button>
           );
         })}
-      </div>
+        </div>
 
       {/* Custom input */}
       {allowCustom && (

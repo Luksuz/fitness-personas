@@ -21,33 +21,33 @@ export default function StepContainer({
 }: StepContainerProps) {
   return (
     <AnimatePresence initial={false} custom={direction} mode="wait">
-      <motion.div
+    <motion.div
         key={stepKey}
-        custom={direction}
-        variants={slideVariants}
-        initial="enter"
-        animate="center"
-        exit="exit"
-        transition={slideTransition}
-        className="w-full"
-      >
-        {/* Heading */}
-        <div className="text-center mb-6 sm:mb-8">
+      custom={direction}
+      variants={slideVariants}
+      initial="enter"
+      animate="center"
+      exit="exit"
+      transition={slideTransition}
+      className="w-full"
+    >
+      {/* Heading */}
+      <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 sm:mb-3 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
-            {heading}
-          </h2>
-          {subheading && (
+          {heading}
+        </h2>
+        {subheading && (
             <p className="text-[#8FABD4]/80 text-sm sm:text-base md:text-lg">
-              {subheading}
-            </p>
-          )}
-        </div>
+            {subheading}
+          </p>
+        )}
+      </div>
 
-        {/* Content */}
+      {/* Content */}
         <div className="space-y-4 sm:space-y-6">
-          {children}
-        </div>
-      </motion.div>
+        {children}
+      </div>
+    </motion.div>
     </AnimatePresence>
   );
 }
