@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TrainerPersona, UserProfile, Message, WorkoutCard as WorkoutCardType, MealCardData } from '@/lib/types';
 import { getPersonaConfig } from '@/lib/personas';
+import { saveConversation, loadConversation, clearConversation } from '@/lib/storage';
 import NutritionSummary from './NutritionSummary';
 import MealCard from './MealCard';
 import MealModal from './MealModal';
@@ -52,6 +53,23 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     setCurrentProfile(userProfile);
   }, [userProfile]);
 
+  // Load conversation from localStorage on mount
+  useEffect(() => {
+    const savedConversation = loadConversation(trainer);
+    if (savedConversation && savedConversation.length > 0) {
+      setMessages(savedConversation);
+      hasGeneratedGreeting.current = true; // Skip greeting generation if we have saved messages
+    }
+  }, [trainer]);
+
+  // Save conversation to localStorage whenever messages change (after streaming is complete)
+  useEffect(() => {
+    if (messages.length > 0 && !isLoading && generatingPlan === null) {
+      // Only save when not currently loading/streaming
+      saveConversation(trainer, messages);
+    }
+  }, [messages, isLoading, generatingPlan, trainer]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -64,6 +82,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     // Regenerate greeting with new profile
     hasGeneratedGreeting.current = false;
     setMessages([]);
+    // Clear saved conversation when regenerating
+    clearConversation(trainer);
   };
 
   // Generate initial greeting message

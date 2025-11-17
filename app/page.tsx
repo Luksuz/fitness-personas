@@ -22,7 +22,16 @@ export default function Home() {
 
   const handleTrainerSelect = (trainer: TrainerPersona) => {
     setSelectedTrainer(trainer);
-    setStep('profile');
+    // Check if profile already exists in localStorage
+    const savedProfile = loadUserProfile();
+    if (savedProfile) {
+      // Profile exists, update state and skip to chat
+      setUserProfile(savedProfile);
+      setStep('chat');
+    } else {
+      // No profile, show profile form
+      setStep('profile');
+    }
   };
 
   const handleProfileSubmit = (profile: UserProfile) => {
