@@ -20,6 +20,8 @@ export interface FoodItem {
 }
 
 export interface UserProfile {
+  name: string;
+  language: 'en' | 'hr';
   height: number; // in cm
   weight: number; // in kg
   age: number;
@@ -32,7 +34,35 @@ export interface UserProfile {
   activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   experienceLevel: 'beginner' | 'intermediate' | 'advanced';
   focusArea?: 'strength' | 'hypertrophy' | 'endurance' | 'general';
+  unitPreferences?: {
+    height: 'cm' | 'ft';
+    weight: 'kg' | 'lbs';
+  };
 }
+
+// Preset options for onboarding
+export const DIETARY_PRESETS = [
+  'Vegan',
+  'Vegetarian',
+  'Keto',
+  'Paleo',
+  'Gluten-Free',
+  'Dairy-Free',
+  'Pescatarian',
+  'Low-Carb',
+  'High-Protein',
+] as const;
+
+export const MUSCLE_PRESETS = [
+  'Chest',
+  'Back',
+  'Legs',
+  'Arms',
+  'Shoulders',
+  'Core',
+  'Glutes',
+  'Calves',
+] as const;
 
 export type TrainerPersona = 'mike' | 'goggins' | 'arnold' | 'kayla' | 'chris' | 'jeff' | 'jen' | 'cassey' | 'marino' | 'josip' | string; // string allows custom trainers like 'custom-{id}'
 

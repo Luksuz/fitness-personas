@@ -87,6 +87,7 @@ Include assistance work but keep it secondary to the main lifts.`;
   const userPrompt = `Create a detailed workout plan for this user:
 
 Profile:
+- Name: ${userProfile.name}
 - Height: ${userProfile.height}cm
 - Weight: ${userProfile.weight}kg
 - Age: ${userProfile.age}
@@ -380,6 +381,7 @@ async function generateNutritionPlanStreaming(
   const userPrompt = `Create a detailed nutrition and meal plan for this user:
 
 Profile:
+- Name: ${userProfile.name}
 - Height: ${userProfile.height}cm
 - Weight: ${userProfile.weight}kg
 - Age: ${userProfile.age}

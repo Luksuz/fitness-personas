@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import UserProfileForm from '@/components/UserProfileForm';
+import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import ChatInterface from '@/components/ChatInterface';
 import { TrainerPersona, UserProfile } from '@/lib/types';
 import { loadUserProfile } from '@/lib/storage';
@@ -80,7 +80,7 @@ export default function TrainerPage() {
             </p>
           </header>
 
-          <UserProfileForm 
+          <OnboardingWizard 
             onSubmit={handleProfileSubmit}
             onBack={handleReset}
           />

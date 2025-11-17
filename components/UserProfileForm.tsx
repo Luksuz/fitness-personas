@@ -10,6 +10,8 @@ interface UserProfileFormProps {
 }
 
 const defaultProfile: Partial<UserProfile> = {
+  name: '',
+  language: 'en',
   height: 175,
   weight: 75,
   age: 30,
@@ -41,7 +43,7 @@ export default function UserProfileForm({ onSubmit, onBack }: UserProfileFormPro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (profile.height && profile.weight && profile.age && profile.experienceLevel && profile.activityLevel) {
+    if (profile.name && profile.language && profile.height && profile.weight && profile.age && profile.experienceLevel && profile.activityLevel) {
       const fullProfile = profile as UserProfile;
       saveUserProfile(fullProfile);
       onSubmit(fullProfile);

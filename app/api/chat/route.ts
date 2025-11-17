@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
     // Add user profile context if available
     if (userProfile) {
       fullSystemPrompt += `\n\nUser Profile:
+- Name: ${userProfile.name}
 - Height: ${userProfile.height}cm
 - Weight: ${userProfile.weight}kg
 - Age: ${userProfile.age}
@@ -51,7 +52,7 @@ ${userProfile.dietaryRestrictions ? `- Dietary Restrictions: ${userProfile.dieta
 ${userProfile.healthIssues ? `- Health Issues: ${userProfile.healthIssues.join(', ')}` : ''}
 ${userProfile.targetMuscles ? `- Target Muscles: ${userProfile.targetMuscles.join(', ')}` : ''}
 
-Use this information to personalize your advice and recommendations.
+Use this information to personalize your advice and recommendations. Address the user by their name when appropriate.
 ${userProfile.experienceLevel === 'advanced' && userProfile.focusArea === 'strength' ? '\nNote: This user is advanced and strength-focused. Use technical terminology and advanced concepts when appropriate. Mention RPE if discussing training intensity.' : ''}`;
     }
 

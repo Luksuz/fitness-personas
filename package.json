@@ -19,6 +19,7 @@
     "@langchain/pinecone": "^1.0.0",
     "@pinecone-database/pinecone": "^5.1.2",
     "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.24",
     "langchain": "^1.0.4",
     "next": "16.0.3",
     "openai": "^6.9.0",
