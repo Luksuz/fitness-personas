@@ -34,6 +34,10 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
   const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [currentProfile, setCurrentProfile] = useState<UserProfile>(userProfile);
+  const [voiceRecordingStatus, setVoiceRecordingStatus] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
+  const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
+  const [language, setLanguage] = useState<'en' | 'hr'>('hr');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasGeneratedGreeting = useRef(false);
 
@@ -70,44 +74,46 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
 
     const generateGreeting = async () => {
       try {
-        const response = await fetch('/api/chat', {
+        // Generate Croatian greeting first
+        const hrResponse = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{
               role: 'user',
-              content: `Greet me and introduce yourself based on my profile. Let me know you can help with workout and nutrition plans.`,
+              content: `Pozdravi me i predstavi se na temelju mog profila na hrvatskom jeziku. Reci mi da možeš pomoći s planovima treninga i prehrane.`,
             }],
             persona: trainer,
             userProfile: currentProfile,
+            language: 'hr',
             // Send system prompt for custom trainers
             systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
           }),
         });
 
-        if (!response.ok) {
-          throw new Error('Failed to generate greeting');
+        if (!hrResponse.ok) {
+          throw new Error('Failed to generate Croatian greeting');
         }
 
-        // Handle streaming response
-        const reader = response.body?.getReader();
+        // Handle streaming Croatian response
+        const hrReader = hrResponse.body?.getReader();
         const decoder = new TextDecoder();
         
-        if (!reader) {
+        if (!hrReader) {
           throw new Error('No response body');
         }
 
         let buffer = '';
-        let greetingContent = '';
+        let hrContent = '';
 
-        // Create initial message for streaming
+        // Create initial message for Croatian streaming
         setMessages([{
           role: 'assistant' as const,
           content: '',
         }]);
 
         while (true) {
-          const { done, value } = await reader.read();
+          const { done, value } = await hrReader.read();
           
           if (done) break;
           
@@ -123,11 +129,82 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 const data = JSON.parse(line.slice(6));
                 
                 if (data.type === 'chunk') {
-                  greetingContent += data.content;
-                  // Update the message with accumulated content
+                  hrContent += data.content;
+                  // Update the message with accumulated Croatian content
                   setMessages([{
                     role: 'assistant' as const,
-                    content: greetingContent,
+                    content: hrContent,
+                  }]);
+                } else if (data.type === 'error') {
+                  throw new Error(data.content);
+                }
+              } catch (error) {
+                console.error('Error parsing SSE data:', error);
+              }
+            }
+          }
+        }
+
+        // Add separator
+        const hrFinalContent = hrContent + '\n\n---\n\n';
+        setMessages([{
+          role: 'assistant' as const,
+          content: hrFinalContent,
+        }]);
+
+        // Now generate English greeting
+        const enResponse = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{
+              role: 'user',
+              content: `Greet me and introduce yourself based on my profile in English. Let me know you can help with workout and nutrition plans.`,
+            }],
+            persona: trainer,
+            userProfile: currentProfile,
+            language: 'en',
+            // Send system prompt for custom trainers
+            systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
+          }),
+        });
+
+        if (!enResponse.ok) {
+          throw new Error('Failed to generate English greeting');
+        }
+
+        // Handle streaming English response
+        const enReader = enResponse.body?.getReader();
+        
+        if (!enReader) {
+          throw new Error('No response body');
+        }
+
+        buffer = '';
+        let enContent = '';
+
+        while (true) {
+          const { done, value } = await enReader.read();
+          
+          if (done) break;
+          
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Process complete SSE messages
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop() || '';
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                if (data.type === 'chunk') {
+                  enContent += data.content;
+                  // Update the message with both Croatian and English content
+                  setMessages([{
+                    role: 'assistant' as const,
+                    content: hrFinalContent + enContent,
                   }]);
                 } else if (data.type === 'error') {
                   throw new Error(data.content);
@@ -143,7 +220,7 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
         // Fallback to a simple message
         setMessages([{
           role: 'assistant' as const,
-          content: 'Hey! Ready to get started? Click the buttons above to generate your workout or nutrition plan!',
+          content: 'Bok! Spremni za početak? Kliknite gumbove iznad da generirate plan treninga ili prehrane!\n\n---\n\nHey! Ready to get started? Click the buttons above to generate your workout or nutrition plan!',
         }]);
       }
     };
@@ -171,6 +248,7 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
           messages: [...messages, userMessage],
           persona: trainer,
           userProfile: currentProfile,
+          language: language,
           // Send system prompt for custom trainers
           systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
         }),
@@ -249,6 +327,13 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
 
   const generatePlan = async (planType: 'workout' | 'nutrition') => {
     setGeneratingPlan(planType);
+    // Reset voice recording status
+    setVoiceRecordingStatus('idle');
+    setVoiceAudioUrl(null);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
 
     const planMessage: Message = {
       role: 'user',
@@ -265,6 +350,7 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
           userProfile: currentProfile,
           persona: trainer,
           planType,
+          language: language,
           // Send system prompt for custom trainers
           systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
         }),
@@ -457,6 +543,20 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                   }]);
                   break;
                   
+                case 'voice_generating':
+                  setVoiceRecordingStatus('generating');
+                  break;
+                  
+                case 'voice_ready':
+                  setVoiceRecordingStatus('ready');
+                  setVoiceAudioUrl(data.audio);
+                  break;
+                  
+                case 'voice_error':
+                  setVoiceRecordingStatus('error');
+                  console.error('Voice generation error:', data.content);
+                  break;
+                  
                 case 'done':
                   // Plan generation complete
                   console.log('Plan generation complete:', data.planType);
@@ -557,6 +657,30 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {/* Language Selector */}
+              <div className="flex items-center gap-2 bg-black/50 border border-[#4A70A9]/50 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={`px-3 py-2 font-semibold text-sm transition-all duration-300 ${
+                    language === 'en'
+                      ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                      : 'text-[#8FABD4] hover:text-[#EFECE3]'
+                  }`}
+                >
+                  EN
+                </button>
+                <div className="w-px h-6 bg-[#4A70A9]/50"></div>
+                <button
+                  onClick={() => setLanguage('hr')}
+                  className={`px-3 py-2 font-semibold text-sm transition-all duration-300 ${
+                    language === 'hr'
+                      ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                      : 'text-[#8FABD4] hover:text-[#EFECE3]'
+                  }`}
+                >
+                  HR
+                </button>
+              </div>
               <button
                 onClick={() => setIsProfileModalOpen(true)}
                 className="px-4 py-2.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-xl font-semibold text-sm transition-all duration-300 text-[#EFECE3]"
@@ -724,6 +848,67 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 </div>
               );
             })}
+            
+            {/* Voice Recording UI */}
+            {trainerConfig.voiceRecording && voiceRecordingStatus !== 'idle' && (
+              <div className="flex justify-start animate-slide-in-left mt-4">
+                <div className="bg-black/90 backdrop-blur-sm rounded-2xl p-5 border border-[#4A70A9]/50 shadow-lg max-w-[80%]">
+                  <div className="flex items-center gap-4">
+                    {voiceRecordingStatus === 'generating' && (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] flex items-center justify-center animate-pulse">
+                          <span className="text-2xl">🎤</span>
+                        </div>
+                        <div>
+                          <p className="text-[#EFECE3] font-semibold">Recording voice...</p>
+                          <p className="text-[#8FABD4] text-sm">Generating audio summary</p>
+                        </div>
+                      </>
+                    )}
+                    {voiceRecordingStatus === 'ready' && voiceAudioUrl && (
+                      <>
+                        <button
+                          onClick={() => {
+                            if (audioRef.current) {
+                              if (audioRef.current.paused) {
+                                audioRef.current.play();
+                              } else {
+                                audioRef.current.pause();
+                              }
+                            } else {
+                              const audio = new Audio(voiceAudioUrl);
+                              audioRef.current = audio;
+                              audio.play();
+                              audio.onended = () => {
+                                audioRef.current = null;
+                              };
+                            }
+                          }}
+                          className="w-12 h-12 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg shadow-[#8FABD4]/30"
+                        >
+                          <span className="text-2xl">▶️</span>
+                        </button>
+                        <div>
+                          <p className="text-[#EFECE3] font-semibold">Voice Summary</p>
+                          <p className="text-[#8FABD4] text-sm">Click to play audio summary</p>
+                        </div>
+                      </>
+                    )}
+                    {voiceRecordingStatus === 'error' && (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-red-900/50 flex items-center justify-center">
+                          <span className="text-2xl">⚠️</span>
+                        </div>
+                        <div>
+                          <p className="text-[#EFECE3] font-semibold">Voice generation failed</p>
+                          <p className="text-[#8FABD4] text-sm">Text summary is still available above</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             
             {(isLoading || generatingPlan) && (
               <div className="flex justify-start animate-slide-in-left">

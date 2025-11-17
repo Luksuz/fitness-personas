@@ -12,7 +12,7 @@ interface TrainerSelectionProps {
 }
 
 export default function TrainerSelection({ onSelect }: TrainerSelectionProps) {
-  const builtInTrainers: TrainerPersona[] = ['mike', 'goggins', 'arnold', 'kayla', 'chris', 'jeff', 'jen', 'cassey'];
+  const builtInTrainers: TrainerPersona[] = ['mike', 'goggins', 'arnold', 'kayla', 'chris', 'jeff', 'jen', 'cassey', 'marino', 'josip'];
   const [customTrainers, setCustomTrainers] = useState<CustomTrainer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<CustomTrainer | null>(null);

@@ -56,3 +56,4 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   }
 }
 
+

@@ -56,3 +56,4 @@ Click the buttons to generate workout and nutrition plans!
 
 See [SETUP.md](../SETUP.md) for detailed documentation.
 
+

@@ -1,16 +1,17 @@
 import { NextRequest } from 'next/server';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { SystemMessage, HumanMessage } from '@langchain/core/messages';
-import { getPersonaPrompt } from '@/lib/personas';
+import { getPersonaPrompt, getPersonaConfig } from '@/lib/personas';
 import { retrieveFoodsForProfile, calculateDailyCalories, calculateMacros } from '@/lib/rag';
 import { TrainerPersona, UserProfile } from '@/lib/types';
+import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userProfile, persona, planType, systemPrompt: providedSystemPrompt } = await req.json();
+    const { userProfile, persona, planType, language = 'en', systemPrompt: providedSystemPrompt } = await req.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -27,9 +28,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (planType === 'workout') {
-      return await generateWorkoutPlanStreaming(model, userProfile, persona, providedSystemPrompt);
+      return await generateWorkoutPlanStreaming(model, userProfile, persona, language, providedSystemPrompt);
     } else if (planType === 'nutrition') {
-      return await generateNutritionPlanStreaming(model, userProfile, persona, providedSystemPrompt);
+      return await generateNutritionPlanStreaming(model, userProfile, persona, language, providedSystemPrompt);
     } else {
       return new Response(
         JSON.stringify({ error: 'Invalid plan type' }),
@@ -49,10 +50,18 @@ async function generateWorkoutPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
   persona: TrainerPersona,
+  language: string = 'en',
   providedSystemPrompt?: string,
 ) {
   // Use provided system prompt (for custom trainers) or get from personas
-  const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
+  const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
+  
+  // Add language instruction
+  const languageInstruction = language === 'hr' 
+    ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses, including introMessage, outroMessage, and voice_recording_text must be in Croatian language.'
+    : '\n\nIMPORTANT: Respond in English. All your responses, including introMessage, outroMessage, and voice_recording_text must be in English language.';
+  
+  const systemPrompt = baseSystemPrompt + languageInstruction;
   
   const isAdvancedStrength = userProfile.experienceLevel === 'advanced' && userProfile.focusArea === 'strength';
   
@@ -113,7 +122,8 @@ CRITICAL: Return your response as a JSON object with this EXACT structure:
       "notes": "Focus on progressive overload each week"
     }
   ],
-  "outroMessage": "Your persona-based closing message. Stay in character. For example: 'Here you go motherfucker, stay hard! Now get to work and stop being a little bitch.'"
+  "outroMessage": "Your persona-based closing message. Stay in character. For example: 'Here you go motherfucker, stay hard! Now get to work and stop being a little bitch.'",
+  "voice_recording_text": "A brief summary of the plan (max 20 seconds when spoken). Summarize the key points of the workout plan in your persona's voice. Keep it concise and motivational."
 }
 
 ${isAdvancedStrength ? 'IMPORTANT: If you include RPE in the workout, explain what RPE means and how to use it IN YOUR OUTRO MESSAGE in your persona style. Don\'t use technical language - explain it like you would naturally speak.' : ''}
@@ -245,6 +255,74 @@ IMPORTANT: Return ONLY valid JSON, no other text. Do not wrap it in markdown cod
           }
         }
         
+        // Generate voice recording if enabled for this persona
+        const personaConfig = getPersonaConfig(persona);
+        
+        // Use voice_recording_text if available, otherwise fallback to outroMessage
+        const voiceText = planData.voice_recording_text || planData.outroMessage;
+        
+        console.log('Voice recording check (workout):', {
+          persona,
+          voiceRecording: personaConfig?.voiceRecording,
+          voiceId: personaConfig?.voiceId,
+          hasVoiceText: !!planData.voice_recording_text,
+          hasOutroMessage: !!planData.outroMessage,
+          voiceText: voiceText?.substring(0, 100),
+          hasApiKey: !!process.env.ELEVENLABS_API_KEY,
+          planDataKeys: Object.keys(planData),
+        });
+        
+        if (personaConfig?.voiceRecording && voiceText && process.env.ELEVENLABS_API_KEY) {
+          console.log('Starting voice generation for workout plan...');
+          try {
+            // Signal that voice is being generated
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'voice_generating' })}\n\n`)
+            );
+            
+            const elevenlabs = new ElevenLabsClient({
+              apiKey: process.env.ELEVENLABS_API_KEY,
+            });
+            
+            const audio = await elevenlabs.textToSpeech.convert(
+              personaConfig.voiceId || 'wMKTNXhUOxBn9btHK0iM',
+              {
+                text: voiceText,
+                modelId: 'eleven_multilingual_v2',
+                outputFormat: 'mp3_44100_128',
+              }
+            );
+            
+            // Convert ReadableStream to Buffer and then to base64
+            const chunks: Uint8Array[] = [];
+            const reader = audio.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+            const audioBuffer = Buffer.concat(chunks);
+            const audioBase64 = audioBuffer.toString('base64');
+            
+            // Send voice ready event with base64 audio
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ 
+                type: 'voice_ready', 
+                audio: `data:audio/mp3;base64,${audioBase64}` 
+              })}\n\n`)
+            );
+          } catch (voiceError: any) {
+            console.error('Voice generation error:', voiceError);
+            // Don't fail the whole request if voice generation fails
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ 
+                type: 'voice_error', 
+                content: voiceError.message 
+              })}\n\n`)
+            );
+          }
+        }
+        
         // Send completion event
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: 'done', planType: 'workout' })}\n\n`)
@@ -274,6 +352,7 @@ async function generateNutritionPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
   persona: TrainerPersona,
+  language: string = 'en',
   providedSystemPrompt?: string,
 ) {
   // First, retrieve relevant foods from Pinecone
@@ -287,7 +366,14 @@ async function generateNutritionPlanStreaming(
   console.log(`Targets: ${dailyCalories} cal, ${macros.protein}g protein, ${macros.carbs}g carbs, ${macros.fat}g fat`);
   
   // Use provided system prompt (for custom trainers) or get from personas
-  const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
+  const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
+  
+  // Add language instruction
+  const languageInstruction = language === 'hr' 
+    ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses, including introMessage, outroMessage, and voice_recording_text must be in Croatian language.'
+    : '\n\nIMPORTANT: Respond in English. All your responses, including introMessage, outroMessage, and voice_recording_text must be in English language.';
+  
+  const systemPrompt = baseSystemPrompt + languageInstruction;
   
   const foodsJson = JSON.stringify(foods.slice(0, 150), null, 2);
   
@@ -335,7 +421,8 @@ CRITICAL: Return your response as a JSON object with this EXACT structure:
       "totalFat": 15
     }
   ],
-  "outroMessage": "Your persona-based closing message about sticking to the nutrition plan. Stay in character. For example: 'Here you go motherfucker, stay hard! Meal prep every Sunday like your life depends on it. No excuses.'"
+  "outroMessage": "Your persona-based closing message about sticking to the nutrition plan. Stay in character. For example: 'Here you go motherfucker, stay hard! Meal prep every Sunday like your life depends on it. No excuses.'",
+  "voice_recording_text": "A brief summary of the plan (max 20 seconds when spoken). Summarize the key points of the nutrition plan in your persona's voice. Keep it concise and motivational."
 }
 
 Requirements:
@@ -475,6 +562,74 @@ IMPORTANT: Return ONLY valid JSON, no other text. Do not wrap it in markdown cod
               encoder.encode(`data: ${JSON.stringify({ type: 'outro_chunk', content: planData.outroMessage[i] })}\n\n`)
             );
             await new Promise(resolve => setTimeout(resolve, 20));
+          }
+        }
+        
+        // Generate voice recording if enabled for this persona
+        const personaConfig = getPersonaConfig(persona);
+        
+        // Use voice_recording_text if available, otherwise fallback to outroMessage
+        const voiceText = planData.voice_recording_text || planData.outroMessage;
+        
+        console.log('Voice recording check (nutrition):', {
+          persona,
+          voiceRecording: personaConfig?.voiceRecording,
+          voiceId: personaConfig?.voiceId,
+          hasVoiceText: !!planData.voice_recording_text,
+          hasOutroMessage: !!planData.outroMessage,
+          voiceText: voiceText?.substring(0, 100),
+          hasApiKey: !!process.env.ELEVENLABS_API_KEY,
+          planDataKeys: Object.keys(planData),
+        });
+        
+        if (personaConfig?.voiceRecording && voiceText && process.env.ELEVENLABS_API_KEY) {
+          console.log('Starting voice generation for nutrition plan...');
+          try {
+            // Signal that voice is being generated
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'voice_generating' })}\n\n`)
+            );
+            
+            const elevenlabs = new ElevenLabsClient({
+              apiKey: process.env.ELEVENLABS_API_KEY,
+            });
+            
+            const audio = await elevenlabs.textToSpeech.convert(
+              personaConfig.voiceId || 'wMKTNXhUOxBn9btHK0iM',
+              {
+                text: voiceText,
+                modelId: 'eleven_multilingual_v2',
+                outputFormat: 'mp3_44100_128',
+              }
+            );
+            
+            // Convert ReadableStream to Buffer and then to base64
+            const chunks: Uint8Array[] = [];
+            const reader = audio.getReader();
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+            const audioBuffer = Buffer.concat(chunks);
+            const audioBase64 = audioBuffer.toString('base64');
+            
+            // Send voice ready event with base64 audio
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ 
+                type: 'voice_ready', 
+                audio: `data:audio/mp3;base64,${audioBase64}` 
+              })}\n\n`)
+            );
+          } catch (voiceError: any) {
+            console.error('Voice generation error:', voiceError);
+            // Don't fail the whole request if voice generation fails
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ 
+                type: 'voice_error', 
+                content: voiceError.message 
+              })}\n\n`)
+            );
           }
         }
         

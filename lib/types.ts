@@ -34,7 +34,7 @@ export interface UserProfile {
   focusArea?: 'strength' | 'hypertrophy' | 'endurance' | 'general';
 }
 
-export type TrainerPersona = 'mike' | 'goggins' | 'arnold' | 'kayla' | 'chris' | 'jeff' | 'jen' | 'cassey' | string; // string allows custom trainers like 'custom-{id}'
+export type TrainerPersona = 'mike' | 'goggins' | 'arnold' | 'kayla' | 'chris' | 'jeff' | 'jen' | 'cassey' | 'marino' | 'josip' | string; // string allows custom trainers like 'custom-{id}'
 
 export interface Message {
   role: 'user' | 'assistant';

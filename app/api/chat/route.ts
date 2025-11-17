@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, persona, userProfile, systemPrompt: providedSystemPrompt } = await req.json();
+    const { messages, persona, userProfile, language = 'hr', systemPrompt: providedSystemPrompt } = await req.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -29,7 +29,12 @@ export async function POST(req: NextRequest) {
     // Use provided system prompt (for custom trainers) or get from personas
     const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona as TrainerPersona);
     
-    let fullSystemPrompt = systemPrompt;
+    // Add language instruction
+    const languageInstruction = language === 'hr' 
+      ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses must be in Croatian language.'
+      : '\n\nIMPORTANT: Respond in English. All your responses must be in English language.';
+    
+    let fullSystemPrompt = systemPrompt + languageInstruction;
     
     // Add user profile context if available
     if (userProfile) {

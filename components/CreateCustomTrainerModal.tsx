@@ -18,6 +18,8 @@ const defaultFormData: Partial<CustomTrainer> = {
   systemPrompt: '',
   catchphrases: [],
   image: '',
+  voiceRecording: false,
+  voiceId: '',
 };
 
 export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, editingTrainer }: CreateCustomTrainerModalProps) {
@@ -38,6 +40,8 @@ export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, edit
           systemPrompt: editingTrainer.systemPrompt || '',
           catchphrases: editingTrainer.catchphrases || [],
           image: editingTrainer.image || '',
+          voiceRecording: editingTrainer.voiceRecording || false,
+          voiceId: editingTrainer.voiceId || '',
         });
         setImagePreview(editingTrainer.image || '');
         setCatchphraseInput('');
@@ -96,6 +100,8 @@ export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, edit
       systemPrompt: formData.systemPrompt,
       catchphrases: formData.catchphrases || [],
       image: formData.image || '',
+      voiceRecording: formData.voiceRecording || false,
+      voiceId: formData.voiceId || '',
       createdAt: editingTrainer?.createdAt || Date.now(),
     };
 
@@ -231,6 +237,39 @@ export default function CreateCustomTrainerModal({ isOpen, onClose, onSave, edit
               <p className="text-xs text-[#8FABD4]/70 mt-1">
                 Ovo određuje kako će AI trener komunicirati i ponašati se
               </p>
+            </div>
+
+            {/* Voice Recording */}
+            <div>
+              <label className="block text-sm font-semibold mb-2 text-[#8FABD4]">
+                Voice Recording
+              </label>
+              <div className="flex items-center gap-3 mb-3">
+                <input
+                  type="checkbox"
+                  checked={formData.voiceRecording || false}
+                  onChange={(e) => setFormData({ ...formData, voiceRecording: e.target.checked })}
+                  className="w-5 h-5 rounded border-[#4A70A9]/50 bg-black/50 text-[#8FABD4] focus:ring-2 focus:ring-[#8FABD4]/50"
+                />
+                <span className="text-[#EFECE3]">Omogući voice recording za ovog trenera</span>
+              </div>
+              {formData.voiceRecording && (
+                <div className="mt-3">
+                  <label className="block text-sm font-semibold mb-2 text-[#8FABD4]">
+                    ElevenLabs Voice ID
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.voiceId || ''}
+                    onChange={(e) => setFormData({ ...formData, voiceId: e.target.value })}
+                    placeholder="wMKTNXhUOxBn9btHK0iM"
+                    className="w-full bg-black/50 border border-[#4A70A9]/50 rounded-xl px-4 py-2 text-[#EFECE3] placeholder-[#8FABD4]/50 focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all"
+                  />
+                  <p className="text-xs text-[#8FABD4]/70 mt-1">
+                    Unesite ElevenLabs voice ID (opcionalno, koristi se default ako nije uneseno)
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Catchphrases */}

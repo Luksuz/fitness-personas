@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AI Fitness Coach - Your Personal Trainer",
-  description: "Get personalized workout and nutrition plans from AI-powered trainers: Mike Thurston, David Goggins, Arnold Schwarzenegger, Kayla Itsines, Chris Heria, Jeff Cavaliere, Jen Selter, and Cassey Ho",
+  description: "Get personalized workout and nutrition plans from AI-powered trainers: Mike Thurston, David Goggins, Arnold Schwarzenegger, Kayla Itsines, Chris Heria, Jeff Cavaliere, Jen Selter, Cassey Ho, Marino Bašić, and Josip Srdanović",
 };
 
 export default function RootLayout({

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@elevenlabs/elevenlabs-js": "^2.24.1",
     "@langchain/anthropic": "^1.0.1",
     "@langchain/openai": "^1.1.1",
     "@langchain/pinecone": "^1.0.0",

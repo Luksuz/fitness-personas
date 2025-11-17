@@ -13,3 +13,7 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxx
 PINECONE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 PINECONE_INDEX_NAME=fitness-foods
 
+# ElevenLabs API Key (for voice recording)
+# Get your key from: https://elevenlabs.io/
+ELEVENLABS_API_KEY=xxxxxxxxxxxxxxxxxxxxx
+
