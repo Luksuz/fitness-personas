@@ -17,21 +17,21 @@ export default function WorkoutModal({ workout, isOpen, onClose }: WorkoutModalP
       onClick={onClose}
     >
       <div
-        className="bg-gradient-to-br from-[#1a1f2e] to-black border border-[#4A70A9]/50 rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl shadow-[#8FABD4]/20 animate-slide-in"
+        className="bg-gradient-to-br from-[#1a1f2e] to-black border border-[#4A70A9]/50 rounded-none sm:rounded-2xl max-w-full sm:max-w-4xl w-full h-full sm:h-auto sm:max-h-[85vh] overflow-hidden shadow-2xl shadow-[#8FABD4]/20 animate-slide-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] p-6">
+        <div className="bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] p-4 sm:p-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-[#EFECE3] mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#EFECE3] mb-2">
                 {workout.day}
               </h2>
-              <p className="text-[#EFECE3]/90">{workout.focus}</p>
+              <p className="text-[#EFECE3]/90 text-sm sm:text-base">{workout.focus}</p>
             </div>
             <button
               onClick={onClose}
-              className="text-[#EFECE3] hover:text-white text-3xl leading-none transition-colors"
+              className="text-[#EFECE3] hover:text-white text-2xl sm:text-3xl leading-none transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation active:scale-95"
             >
               ×
             </button>
@@ -39,7 +39,7 @@ export default function WorkoutModal({ workout, isOpen, onClose }: WorkoutModalP
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-140px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-[calc(85vh-140px)]">
           {/* Warm-up */}
           {workout.warmup && (
             <div className="mb-6">
@@ -128,10 +128,10 @@ export default function WorkoutModal({ workout, isOpen, onClose }: WorkoutModalP
         </div>
 
         {/* Footer */}
-        <div className="bg-black/40 border-t border-[#4A70A9]/30 p-4">
+        <div className="bg-black/40 border-t border-[#4A70A9]/30 p-3 sm:p-4">
           <button
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] rounded-xl font-semibold text-[#EFECE3] transition-all duration-300"
+            className="w-full py-3 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base text-[#EFECE3] transition-all duration-300 active:scale-95 min-h-[44px] touch-manipulation"
           >
             Close
           </button>

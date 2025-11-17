@@ -70,12 +70,12 @@ export default function TrainerPage() {
           onProfileUpdate={handleProfileUpdate}
         />
       ) : (
-        <div className="container mx-auto px-4 py-8">
-          <header className="text-center mb-12 animate-fade-in">
-            <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#8FABD4] via-[#4A70A9] to-[#8FABD4]">
+        <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+          <header className="text-center mb-8 sm:mb-12 animate-fade-in">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 bg-clip-text text-transparent bg-gradient-to-r from-[#8FABD4] via-[#4A70A9] to-[#8FABD4]">
               AI Fitness Coach
             </h1>
-            <p className="text-[#8FABD4] text-lg">
+            <p className="text-[#8FABD4] text-base sm:text-lg">
               Your personal trainer powered by AI
             </p>
           </header>

@@ -13,7 +13,7 @@ export default function WorkoutCard({ workout, onClick }: WorkoutCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-gradient-to-br from-black/80 to-[#1a1f2e]/80 border border-[#4A70A9]/40 rounded-xl p-4 cursor-pointer hover:border-[#8FABD4] hover:shadow-lg hover:shadow-[#8FABD4]/20 transition-all duration-300 group"
+      className="bg-gradient-to-br from-black/80 to-[#1a1f2e]/80 border border-[#4A70A9]/40 rounded-lg sm:rounded-xl p-3 sm:p-4 cursor-pointer hover:border-[#8FABD4] hover:shadow-lg hover:shadow-[#8FABD4]/20 transition-all duration-300 group active:scale-[0.98] touch-manipulation"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">

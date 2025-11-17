@@ -69,19 +69,19 @@ export default function UserProfileForm({ onSubmit, onBack }: UserProfileFormPro
   };
 
   return (
-    <div className="w-[70%] mx-auto bg-black/80 backdrop-blur-sm rounded-2xl p-8 border border-[#4A70A9]/50 shadow-2xl">
+    <div className="w-full px-4 sm:w-[90%] md:w-[85%] lg:w-[75%] xl:w-[70%] mx-auto bg-black/80 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-[#4A70A9]/50 shadow-2xl">
       <button
         onClick={onBack}
-        className="mb-6 text-[#8FABD4] hover:text-[#EFECE3] transition-colors flex items-center gap-2"
+        className="mb-4 sm:mb-6 text-sm sm:text-base text-[#8FABD4] hover:text-[#EFECE3] transition-colors flex items-center gap-2 min-h-[44px] touch-manipulation active:scale-95"
       >
-        ← Back to trainer selection
+        ← <span className="hidden sm:inline">Back to trainer selection</span><span className="sm:hidden">Back</span>
       </button>
 
-      <h2 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
         Tell Us About Yourself
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -365,7 +365,7 @@ export default function UserProfileForm({ onSubmit, onBack }: UserProfileFormPro
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-[#8FABD4] via-[#6B9BC7] to-[#8FABD4] hover:from-[#A8C5E0] hover:via-[#8FABD4] hover:to-[#A8C5E0] text-[#EFECE3] font-bold py-3 px-6 rounded-xl transition-all duration-300 text-lg shadow-lg shadow-[#8FABD4]/30 hover:shadow-xl hover:shadow-[#8FABD4]/50 transform hover:scale-[1.02]"
+          className="w-full bg-gradient-to-r from-[#8FABD4] via-[#6B9BC7] to-[#8FABD4] hover:from-[#A8C5E0] hover:via-[#8FABD4] hover:to-[#A8C5E0] text-[#EFECE3] font-bold py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 text-base sm:text-lg shadow-lg shadow-[#8FABD4]/30 hover:shadow-xl hover:shadow-[#8FABD4]/50 transform hover:scale-[1.02] active:scale-95 min-h-[44px] touch-manipulation"
         >
           Start Training
         </button>

@@ -47,26 +47,26 @@ export default function MealModal({ meal, isOpen, onClose }: MealModalProps) {
       onClick={onClose}
     >
       <div
-        className="bg-black rounded-2xl shadow-2xl border border-[#4A70A9]/50 max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in-left"
+        className="bg-black rounded-none sm:rounded-2xl shadow-2xl border border-[#4A70A9]/50 max-w-full sm:max-w-4xl w-full h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto animate-slide-in-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-black/95 backdrop-blur-xl border-b border-[#4A70A9]/50 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
+        <div className="sticky top-0 bg-black/95 backdrop-blur-xl border-b border-[#4A70A9]/50 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+          <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
             {meal.name}
           </h3>
           <button
             onClick={onClose}
-            className="text-[#8FABD4] hover:text-[#EFECE3] transition-colors text-2xl leading-none"
+            className="text-[#8FABD4] hover:text-[#EFECE3] transition-colors text-2xl sm:text-2xl leading-none min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation active:scale-95"
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Meal Totals */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             <div className="bg-[#4A70A9]/20 rounded-xl p-4 border border-[#4A70A9]/50">
               <div className="text-[#8FABD4]/70 text-sm mb-1">Calories</div>
               <div className="text-2xl font-bold text-[#8FABD4]">

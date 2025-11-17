@@ -33,9 +33,19 @@ interface NutritionSummaryProps {
 }
 
 export default function NutritionSummary({ meals, dailyTargets }: NutritionSummaryProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Set initial collapsed state based on screen size
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsCollapsed(window.innerWidth < 1024);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Calculate daily totals
   const dailyTotals = meals.reduce(
@@ -74,24 +84,24 @@ export default function NutritionSummary({ meals, dailyTargets }: NutritionSumma
         onClose={() => setIsModalOpen(false)}
       />
       
-      <div className="fixed right-4 top-20 w-80 bg-black/95 backdrop-blur-xl rounded-xl shadow-2xl border border-[#4A70A9]/50 z-50 animate-slide-in-right">
+      <div className="fixed bottom-0 left-0 right-0 lg:bottom-auto lg:right-4 lg:top-20 lg:left-auto w-full lg:w-80 lg:max-w-[calc(100vw-2rem)] bg-black/95 backdrop-blur-xl rounded-t-xl lg:rounded-xl shadow-2xl border border-[#4A70A9]/50 z-50 animate-slide-in-right max-h-[60vh] lg:max-h-[70vh] flex flex-col">
       {/* Header */}
       <div
-        className="flex items-center justify-between p-4 border-b border-[#4A70A9]/50 cursor-pointer hover:bg-black/70 transition-colors"
+        className="flex items-center justify-between p-3 sm:p-4 border-b border-[#4A70A9]/50 cursor-pointer hover:bg-black/70 transition-colors flex-shrink-0 touch-manipulation min-h-[44px]"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
-        <h3 className="font-bold text-lg flex items-center gap-2 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
+        <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
           📊 Nutrition Tracker
         </h3>
-        <button className="text-2xl text-[#8FABD4] hover:text-[#EFECE3] transition-colors">
+        <button className="text-xl sm:text-2xl text-[#8FABD4] hover:text-[#EFECE3] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation">
           {isCollapsed ? '▼' : '▲'}
         </button>
       </div>
 
       {!isCollapsed && (
-        <div className="p-4 max-h-[70vh] overflow-y-auto">
+        <div className="p-3 sm:p-4 overflow-y-auto flex-1">
           {/* Daily Totals */}
-          <div className="mb-6 p-4 bg-black/50 rounded-xl border border-[#4A70A9]/50">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-black/50 rounded-lg sm:rounded-xl border border-[#4A70A9]/50">
             <h4 className="font-semibold mb-3 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Daily Totals</h4>
             
             {/* Calories */}
@@ -172,13 +182,13 @@ export default function NutritionSummary({ meals, dailyTargets }: NutritionSumma
           </div>
 
           {/* Individual Meals */}
-          <div className="space-y-3">
-            <h4 className="font-semibold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent mb-3">Meals Breakdown</h4>
+          <div className="space-y-2 sm:space-y-3">
+            <h4 className="font-semibold text-sm sm:text-base bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent mb-2 sm:mb-3">Meals Breakdown</h4>
             {meals.map((meal, idx) => (
               <div
                 key={idx}
                 onClick={() => handleMealClick(meal)}
-                className="bg-black/50 rounded-xl p-4 border border-[#4A70A9]/50 cursor-pointer transition-all duration-300 hover:border-[#8FABD4]/50 hover:bg-black/70 hover:shadow-lg hover:shadow-[#8FABD4]/20 hover:scale-[1.02] active:scale-[0.98]"
+                className="bg-black/50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-[#4A70A9]/50 cursor-pointer transition-all duration-300 hover:border-[#8FABD4]/50 hover:bg-black/70 hover:shadow-lg hover:shadow-[#8FABD4]/20 hover:scale-[1.02] active:scale-[0.98] touch-manipulation"
               >
                 <h5 className="font-semibold mb-3 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent text-sm">
                   {meal.name}

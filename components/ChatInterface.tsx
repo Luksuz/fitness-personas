@@ -580,10 +580,10 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
       {/* Full Viewport Chat Interface */}
       <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000]">
         {/* Header */}
-        <div className="bg-black/80 backdrop-blur-xl border-b border-[#4A70A9]/50 px-6 py-4 shadow-lg">
-          <div className="flex items-center justify-between w-[70%] mx-auto">
-            <div className="flex items-center gap-4 animate-fade-in">
-              <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#8FABD4] shadow-lg">
+        <div className="bg-black/80 backdrop-blur-xl border-b border-[#4A70A9]/50 px-3 sm:px-4 md:px-6 py-3 sm:py-4 shadow-lg">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-0 w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto">
+            <div className="flex items-center gap-2 sm:gap-4 animate-fade-in min-w-0">
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-[#8FABD4] shadow-lg flex-shrink-0">
                 {trainerConfig.image.startsWith('data:') || trainerConfig.image.startsWith('/') ? (
                   trainerConfig.image.startsWith('data:') ? (
                     <img
@@ -600,24 +600,24 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                     />
                   )
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] flex items-center justify-center text-2xl">
+                  <div className="w-full h-full bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] flex items-center justify-center text-lg sm:text-xl md:text-2xl">
                     {trainerConfig.avatar}
                   </div>
                 )}
               </div>
-              <div>
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent truncate">
                   {trainerConfig.name}
                 </h2>
-                <p className="text-[#8FABD4] text-sm">{trainerConfig.description}</p>
+                <p className="text-[#8FABD4] text-xs sm:text-sm truncate">{trainerConfig.description}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {/* Language Selector */}
-              <div className="flex items-center gap-2 bg-black/50 border border-[#4A70A9]/50 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-1 sm:gap-2 bg-black/50 border border-[#4A70A9]/50 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setLanguage('en')}
-                  className={`px-3 py-2 font-semibold text-sm transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-2 font-semibold text-xs sm:text-sm transition-all duration-300 min-h-[44px] touch-manipulation active:scale-95 ${
                     language === 'en'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
                       : 'text-[#8FABD4] hover:text-[#EFECE3]'
@@ -625,10 +625,10 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 >
                   EN
                 </button>
-                <div className="w-px h-6 bg-[#4A70A9]/50"></div>
+                <div className="w-px h-4 sm:h-6 bg-[#4A70A9]/50"></div>
                 <button
                   onClick={() => setLanguage('hr')}
-                  className={`px-3 py-2 font-semibold text-sm transition-all duration-300 ${
+                  className={`px-2 sm:px-3 py-2 font-semibold text-xs sm:text-sm transition-all duration-300 min-h-[44px] touch-manipulation active:scale-95 ${
                     language === 'hr'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
                       : 'text-[#8FABD4] hover:text-[#EFECE3]'
@@ -639,50 +639,58 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               </div>
               <button
                 onClick={() => setIsProfileModalOpen(true)}
-                className="px-4 py-2.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-xl font-semibold text-sm transition-all duration-300 text-[#EFECE3]"
+                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 text-[#EFECE3] min-h-[44px] touch-manipulation active:scale-95"
                 title="Edit Profile"
               >
-                ⚙️ Profile
+                <span className="hidden sm:inline">⚙️ Profile</span>
+                <span className="sm:hidden">⚙️</span>
               </button>
               <button
                 onClick={() => generatePlan('workout')}
                 disabled={generatingPlan !== null}
-                className="px-5 py-2.5 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3]"
+                className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3] min-h-[44px] touch-manipulation"
               >
                 {generatingPlan === 'workout' ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⚙️</span> Generating...
+                  <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="animate-spin">⚙️</span> <span className="hidden sm:inline">Generating...</span>
                   </span>
                 ) : (
-                  '🏋️ Workout Plan'
+                  <>
+                    <span className="hidden md:inline">🏋️ Workout Plan</span>
+                    <span className="md:hidden">🏋️ Workout</span>
+                  </>
                 )}
               </button>
               <button
                 onClick={() => generatePlan('nutrition')}
                 disabled={generatingPlan !== null}
-                className="px-5 py-2.5 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3]"
+                className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3] min-h-[44px] touch-manipulation"
               >
                 {generatingPlan === 'nutrition' ? (
-                  <span className="flex items-center gap-2">
-                    <span className="animate-spin">⚙️</span> Generating...
+                  <span className="flex items-center gap-1 sm:gap-2">
+                    <span className="animate-spin">⚙️</span> <span className="hidden sm:inline">Generating...</span>
                   </span>
                 ) : (
-                  '🥗 Nutrition Plan'
+                  <>
+                    <span className="hidden md:inline">🥗 Nutrition Plan</span>
+                    <span className="md:hidden">🥗 Nutrition</span>
+                  </>
                 )}
               </button>
               <button
                 onClick={onReset}
-                className="px-4 py-2.5 bg-black/50 hover:bg-black border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-xl text-sm font-medium transition-all duration-300 hover:scale-105 text-[#EFECE3]"
+                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-black/50 hover:bg-black border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 hover:scale-105 active:scale-95 text-[#EFECE3] min-h-[44px] touch-manipulation"
               >
-                Change Trainer
+                <span className="hidden sm:inline">Change Trainer</span>
+                <span className="sm:hidden">Change</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Messages Area - Full Height */}
-        <div className="flex-1 overflow-y-auto px-4 py-6">
-          <div className="w-[70%] mx-auto space-y-6">
+        <div className="flex-1 overflow-y-auto px-2 sm:px-3 md:px-4 py-4 sm:py-6">
+          <div className="w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto space-y-4 sm:space-y-6">
           {messages.map((message, idx) => {
             // Special handling for meal cards
             if (message.content === '__MEAL_CARDS__' && nutritionData) {
@@ -692,8 +700,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                   className="flex justify-start animate-slide-in-left"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
-                  <div className="max-w-[80%] w-full">
-                    <div className="bg-black/90 backdrop-blur-sm rounded-2xl p-5 border border-[#4A70A9]/50">
+                  <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%] w-full">
+                    <div className="bg-black/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-[#4A70A9]/50">
                       <h4 className="font-semibold mb-4 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Your Meals</h4>
                       <div className="space-y-3">
                         {nutritionData.map((meal: MealCardData, mealIdx: number) => (
@@ -726,8 +734,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                   className="flex justify-start animate-slide-in-left"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
-                  <div className="max-w-[80%] w-full">
-                    <div className="bg-black/90 backdrop-blur-sm rounded-2xl p-5 border border-[#4A70A9]/50">
+                  <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%] w-full">
+                    <div className="bg-black/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-[#4A70A9]/50">
                       <h4 className="font-semibold mb-4 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Your Workout Plan</h4>
                       <div className="space-y-3">
                         {workoutData.map((workout: WorkoutCardType, workoutIdx: number) => (
@@ -759,7 +767,7 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                    className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg transition-all duration-300 hover:shadow-xl ${
                       message.role === 'user'
                         ? 'bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
                         : 'bg-black/90 backdrop-blur-sm text-[#EFECE3] border border-[#4A70A9]/50'
@@ -883,8 +891,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
         </div>
 
         {/* Input Area */}
-        <div className="bg-black/80 backdrop-blur-xl border-t border-[#4A70A9]/50 px-4 py-5 shadow-2xl">
-          <div className="w-[70%] mx-auto flex gap-4">
+        <div className="bg-black/80 backdrop-blur-xl border-t border-[#4A70A9]/50 px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 shadow-2xl">
+          <div className="w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
             <input
               type="text"
               value={input}
@@ -897,12 +905,12 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               }}
               placeholder="Ask your trainer anything..."
               disabled={isLoading}
-              className="flex-1 bg-black/50 border border-[#4A70A9]/50 rounded-xl px-5 py-4 text-[#EFECE3] placeholder-[#8FABD4]/50 focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all duration-300 disabled:opacity-50 hover:border-[#8FABD4]"
+              className="flex-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg sm:rounded-xl px-3 sm:px-4 md:px-5 py-3 sm:py-3 md:py-4 text-sm sm:text-base text-[#EFECE3] placeholder-[#8FABD4]/50 focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all duration-300 disabled:opacity-50 hover:border-[#8FABD4]"
             />
             <button
               onClick={sendMessage}
               disabled={isLoading || !input.trim()}
-              className="px-8 py-4 bg-gradient-to-r from-[#4A70A9] via-[#8FABD4] to-[#4A70A9] hover:from-[#8FABD4] hover:via-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:via-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-[#EFECE3] transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none"
+              className="px-4 sm:px-6 md:px-8 py-3 sm:py-3 md:py-4 bg-gradient-to-r from-[#4A70A9] via-[#8FABD4] to-[#4A70A9] hover:from-[#8FABD4] hover:via-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:via-black disabled:to-black disabled:opacity-50 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base text-[#EFECE3] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none min-h-[44px] touch-manipulation"
             >
               Send
             </button>

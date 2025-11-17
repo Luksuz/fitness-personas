@@ -30,7 +30,7 @@ export default function MealCard({ meal, onClick }: MealCardProps) {
   return (
     <div
       onClick={onClick}
-      className="bg-black/50 rounded-xl p-4 border border-[#4A70A9]/50 cursor-pointer transition-all duration-300 hover:border-[#8FABD4]/50 hover:bg-black/70 hover:shadow-lg hover:shadow-[#8FABD4]/20 hover:scale-[1.02] active:scale-[0.98] my-3"
+      className="bg-black/50 rounded-lg sm:rounded-xl p-3 sm:p-4 border border-[#4A70A9]/50 cursor-pointer transition-all duration-300 hover:border-[#8FABD4]/50 hover:bg-black/70 hover:shadow-lg hover:shadow-[#8FABD4]/20 hover:scale-[1.02] active:scale-[0.98] my-2 sm:my-3 touch-manipulation"
     >
       <h5 className="font-semibold mb-3 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent text-sm">
         {meal.name}
