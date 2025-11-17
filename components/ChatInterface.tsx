@@ -94,46 +94,49 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
 
     const generateGreeting = async () => {
       try {
-        // Generate Croatian greeting first
-        const hrResponse = await fetch('/api/chat', {
+        const greetingContent = language === 'hr' 
+          ? `Pozdravi me i predstavi se na temelju mog profila na hrvatskom jeziku. Reci mi da možeš pomoći s planovima treninga i prehrane.`
+          : `Greet me and introduce yourself based on my profile in English. Let me know you can help with workout and nutrition plans.`;
+        
+        const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             messages: [{
               role: 'user',
-              content: `Pozdravi me i predstavi se na temelju mog profila na hrvatskom jeziku. Reci mi da možeš pomoći s planovima treninga i prehrane.`,
+              content: greetingContent,
             }],
             persona: trainer,
             userProfile: currentProfile,
-            language: 'hr',
+            language: language,
             // Send system prompt for custom trainers
             systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
           }),
         });
 
-        if (!hrResponse.ok) {
-          throw new Error('Failed to generate Croatian greeting');
+        if (!response.ok) {
+          throw new Error('Failed to generate greeting');
         }
 
-        // Handle streaming Croatian response
-        const hrReader = hrResponse.body?.getReader();
+        // Handle streaming response
+        const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         
-        if (!hrReader) {
+        if (!reader) {
           throw new Error('No response body');
         }
 
         let buffer = '';
-        let hrContent = '';
+        let content = '';
 
-        // Create initial message for Croatian streaming
+        // Create initial message for streaming
         setMessages([{
           role: 'assistant' as const,
           content: '',
         }]);
 
         while (true) {
-          const { done, value } = await hrReader.read();
+          const { done, value } = await reader.read();
           
           if (done) break;
           
@@ -149,82 +152,11 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 const data = JSON.parse(line.slice(6));
                 
                 if (data.type === 'chunk') {
-                  hrContent += data.content;
-                  // Update the message with accumulated Croatian content
+                  content += data.content;
+                  // Update the message with accumulated content
                   setMessages([{
                     role: 'assistant' as const,
-                    content: hrContent,
-                  }]);
-                } else if (data.type === 'error') {
-                  throw new Error(data.content);
-                }
-              } catch (error) {
-                console.error('Error parsing SSE data:', error);
-              }
-            }
-          }
-        }
-
-        // Add separator
-        const hrFinalContent = hrContent + '\n\n---\n\n';
-        setMessages([{
-          role: 'assistant' as const,
-          content: hrFinalContent,
-        }]);
-
-        // Now generate English greeting
-        const enResponse = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [{
-              role: 'user',
-              content: `Greet me and introduce yourself based on my profile in English. Let me know you can help with workout and nutrition plans.`,
-            }],
-            persona: trainer,
-            userProfile: currentProfile,
-            language: 'en',
-            // Send system prompt for custom trainers
-            systemPrompt: trainer.startsWith('custom-') ? trainerConfig.systemPrompt : undefined,
-          }),
-        });
-
-        if (!enResponse.ok) {
-          throw new Error('Failed to generate English greeting');
-        }
-
-        // Handle streaming English response
-        const enReader = enResponse.body?.getReader();
-        
-        if (!enReader) {
-          throw new Error('No response body');
-        }
-
-        buffer = '';
-        let enContent = '';
-
-        while (true) {
-          const { done, value } = await enReader.read();
-          
-          if (done) break;
-          
-          buffer += decoder.decode(value, { stream: true });
-          
-          // Process complete SSE messages
-          const lines = buffer.split('\n\n');
-          buffer = lines.pop() || '';
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                
-                if (data.type === 'chunk') {
-                  enContent += data.content;
-                  // Update the message with both Croatian and English content
-                  setMessages([{
-                    role: 'assistant' as const,
-                    content: hrFinalContent + enContent,
+                    content: content,
                   }]);
                 } else if (data.type === 'error') {
                   throw new Error(data.content);
@@ -238,15 +170,19 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
       } catch (error) {
         console.error('Failed to generate greeting:', error);
         // Fallback to a simple message
+        const fallbackMessage = language === 'hr'
+          ? 'Bok! Spremni za početak? Kliknite gumbove iznad da generirate plan treninga ili prehrane!'
+          : 'Hey! Ready to get started? Click the buttons above to generate your workout or nutrition plan!';
+        
         setMessages([{
           role: 'assistant' as const,
-          content: 'Bok! Spremni za početak? Kliknite gumbove iznad da generirate plan treninga ili prehrane!\n\n---\n\nHey! Ready to get started? Click the buttons above to generate your workout or nutrition plan!',
+          content: fallbackMessage,
         }]);
       }
     };
 
     generateGreeting();
-  }, [trainer, currentProfile]);
+  }, [trainer, currentProfile, language]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
