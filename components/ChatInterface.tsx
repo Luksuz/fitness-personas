@@ -6,8 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TrainerPersona, UserProfile, Message, WorkoutCard as WorkoutCardType, MealCardData } from '@/lib/types';
 import { getPersonaConfig } from '@/lib/personas';
-import { saveConversation, loadConversation, clearConversation } from '@/lib/storage';
-import NutritionSummary from './NutritionSummary';
+import { saveConversation, loadConversation, clearConversation, savePlans, loadPlans, clearPlans } from '@/lib/storage';
 import MealCard from './MealCard';
 import MealModal from './MealModal';
 import WorkoutCard from './WorkoutCard';
@@ -38,6 +37,8 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
   const [voiceRecordingStatus, setVoiceRecordingStatus] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
   const [language, setLanguage] = useState<'en' | 'hr'>('hr');
+  const [activeTab, setActiveTab] = useState<'workout' | 'nutrition'>('nutrition');
+  const [mobileView, setMobileView] = useState<'chat' | 'workout' | 'nutrition'>('chat');
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasGeneratedGreeting = useRef(false);
@@ -53,12 +54,25 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     setCurrentProfile(userProfile);
   }, [userProfile]);
 
-  // Load conversation from localStorage on mount
+  // Load conversation and plans from localStorage on mount
   useEffect(() => {
     const savedConversation = loadConversation(trainer);
     if (savedConversation && savedConversation.length > 0) {
       setMessages(savedConversation);
       hasGeneratedGreeting.current = true; // Skip greeting generation if we have saved messages
+    }
+    
+    const savedPlans = loadPlans(trainer);
+    if (savedPlans) {
+      if (savedPlans.workoutPlan) {
+        setWorkoutData(savedPlans.workoutPlan);
+      }
+      if (savedPlans.nutritionPlan) {
+        setNutritionData(savedPlans.nutritionPlan);
+      }
+      if (savedPlans.dailyTargets) {
+        setDailyTargets(savedPlans.dailyTargets);
+      }
     }
   }, [trainer]);
 
@@ -69,6 +83,14 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
       saveConversation(trainer, messages);
     }
   }, [messages, isLoading, generatingPlan, trainer]);
+
+  // Save plans to localStorage whenever they change (after generation is complete)
+  useEffect(() => {
+    if (generatingPlan === null) {
+      // Only save when not currently generating
+      savePlans(trainer, workoutData, nutritionData, dailyTargets);
+    }
+  }, [workoutData, nutritionData, dailyTargets, generatingPlan, trainer]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -82,8 +104,13 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     // Regenerate greeting with new profile
     hasGeneratedGreeting.current = false;
     setMessages([]);
-    // Clear saved conversation when regenerating
+    // Clear saved conversation and plans when regenerating
     clearConversation(trainer);
+    clearPlans(trainer);
+    // Reset plan data
+    setWorkoutData(null);
+    setNutritionData(null);
+    setDailyTargets(null);
   };
 
   // Generate initial greeting message
@@ -283,6 +310,9 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
 
   const generatePlan = async (planType: 'workout' | 'nutrition') => {
     setGeneratingPlan(planType);
+    // Switch to appropriate tab and view
+    setActiveTab(planType);
+    setMobileView(planType);
     // Reset voice recording status
     setVoiceRecordingStatus('idle');
     setVoiceAudioUrl(null);
@@ -564,26 +594,13 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
         onSave={handleProfileSave}
       />
       
-      {/* Nutrition Summary Panel */}
-      {nutritionData && dailyTargets && (
-        <NutritionSummary
-          meals={nutritionData}
-          dailyTargets={{
-            calories: dailyTargets.calories,
-            protein: dailyTargets.macros.protein,
-            carbs: dailyTargets.macros.carbs,
-            fat: dailyTargets.macros.fat,
-          }}
-        />
-      )}
-      
-      {/* Full Viewport Chat Interface */}
+      {/* Full Viewport Chat Interface with Split Layout */}
       <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000]">
-        {/* Header */}
-        <div className="bg-black/80 backdrop-blur-xl border-b border-[#4A70A9]/50 px-3 sm:px-4 md:px-6 py-3 sm:py-4 shadow-lg">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-0 w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto">
-            <div className="flex items-center gap-2 sm:gap-4 animate-fade-in min-w-0">
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-[#8FABD4] shadow-lg flex-shrink-0">
+        {/* Header - Compact */}
+        <div className="bg-black/80 backdrop-blur-xl border-b border-[#4A70A9]/50 px-2 sm:px-3 md:px-4 py-2 shadow-lg">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2 lg:gap-0 w-full px-2">
+            <div className="flex items-center gap-2 sm:gap-3 animate-fade-in min-w-0">
+              <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-[#8FABD4] shadow-lg flex-shrink-0">
                 {trainerConfig.image.startsWith('data:') || trainerConfig.image.startsWith('/') ? (
                   trainerConfig.image.startsWith('data:') ? (
                     <img
@@ -600,24 +617,24 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                     />
                   )
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] flex items-center justify-center text-lg sm:text-xl md:text-2xl">
+                  <div className="w-full h-full bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] flex items-center justify-center text-base sm:text-lg">
                     {trainerConfig.avatar}
                   </div>
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent truncate">
+                <h2 className="text-sm sm:text-base md:text-lg font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent truncate">
                   {trainerConfig.name}
                 </h2>
-                <p className="text-[#8FABD4] text-xs sm:text-sm truncate">{trainerConfig.description}</p>
+                <p className="text-[#8FABD4] text-[10px] sm:text-xs truncate">{trainerConfig.description}</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               {/* Language Selector */}
-              <div className="flex items-center gap-1 sm:gap-2 bg-black/50 border border-[#4A70A9]/50 rounded-xl overflow-hidden">
+              <div className="flex items-center gap-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setLanguage('en')}
-                  className={`px-2 sm:px-3 py-2 font-semibold text-xs sm:text-sm transition-all duration-300 min-h-[44px] touch-manipulation active:scale-95 ${
+                  className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
                     language === 'en'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
                       : 'text-[#8FABD4] hover:text-[#EFECE3]'
@@ -625,10 +642,10 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 >
                   EN
                 </button>
-                <div className="w-px h-4 sm:h-6 bg-[#4A70A9]/50"></div>
+                <div className="w-px h-4 bg-[#4A70A9]/50"></div>
                 <button
                   onClick={() => setLanguage('hr')}
-                  className={`px-2 sm:px-3 py-2 font-semibold text-xs sm:text-sm transition-all duration-300 min-h-[44px] touch-manipulation active:scale-95 ${
+                  className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
                     language === 'hr'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
                       : 'text-[#8FABD4] hover:text-[#EFECE3]'
@@ -639,47 +656,15 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               </div>
               <button
                 onClick={() => setIsProfileModalOpen(true)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 text-[#EFECE3] min-h-[44px] touch-manipulation active:scale-95"
+                className="px-2 sm:px-3 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95"
                 title="Edit Profile"
               >
                 <span className="hidden sm:inline">⚙️ Profile</span>
                 <span className="sm:hidden">⚙️</span>
               </button>
               <button
-                onClick={() => generatePlan('workout')}
-                disabled={generatingPlan !== null}
-                className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3] min-h-[44px] touch-manipulation"
-              >
-                {generatingPlan === 'workout' ? (
-                  <span className="flex items-center gap-1 sm:gap-2">
-                    <span className="animate-spin">⚙️</span> <span className="hidden sm:inline">Generating...</span>
-                  </span>
-                ) : (
-                  <>
-                    <span className="hidden md:inline">🏋️ Workout Plan</span>
-                    <span className="md:hidden">🏋️ Workout</span>
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => generatePlan('nutrition')}
-                disabled={generatingPlan !== null}
-                className="px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:to-black disabled:opacity-50 rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none text-[#EFECE3] min-h-[44px] touch-manipulation"
-              >
-                {generatingPlan === 'nutrition' ? (
-                  <span className="flex items-center gap-1 sm:gap-2">
-                    <span className="animate-spin">⚙️</span> <span className="hidden sm:inline">Generating...</span>
-                  </span>
-                ) : (
-                  <>
-                    <span className="hidden md:inline">🥗 Nutrition Plan</span>
-                    <span className="md:hidden">🥗 Nutrition</span>
-                  </>
-                )}
-              </button>
-              <button
                 onClick={onReset}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-black/50 hover:bg-black border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 hover:scale-105 active:scale-95 text-[#EFECE3] min-h-[44px] touch-manipulation"
+                className="px-2 sm:px-3 py-1.5 bg-black/50 hover:bg-black border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105 active:scale-95 text-[#EFECE3] touch-manipulation"
               >
                 <span className="hidden sm:inline">Change Trainer</span>
                 <span className="sm:hidden">Change</span>
@@ -688,231 +673,352 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
           </div>
         </div>
 
-        {/* Messages Area - Full Height */}
-        <div className="flex-1 overflow-y-auto px-2 sm:px-3 md:px-4 py-4 sm:py-6">
-          <div className="w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto space-y-4 sm:space-y-6">
-          {messages.map((message, idx) => {
-            // Special handling for meal cards
-            if (message.content === '__MEAL_CARDS__' && nutritionData) {
-              return (
-                <div 
-                  key={idx} 
-                  className="flex justify-start animate-slide-in-left"
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                >
-                  <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%] w-full">
-                    <div className="bg-black/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-[#4A70A9]/50">
-                      <h4 className="font-semibold mb-4 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Your Meals</h4>
-                      <div className="space-y-3">
-                        {nutritionData.map((meal: MealCardData, mealIdx: number) => (
-                          <div
-                            key={mealIdx}
-                            className="animate-slide-in-left"
-                            style={{ animationDelay: `${mealIdx * 100}ms` }}
-                          >
-                            <MealCard
-                              meal={meal}
-                              onClick={() => {
-                                setSelectedMeal(meal);
-                                setIsMealModalOpen(true);
+        {/* Split Layout: 70% Chat + 30% Plans (Desktop) / Full Width (Mobile) */}
+        <div className="flex-1 flex overflow-hidden pb-16 md:pb-0">
+          {/* Left Side: Chat Area */}
+          <div className={`flex-1 flex flex-col w-full md:w-[70%] ${mobileView !== 'chat' ? 'hidden md:flex' : 'flex'}`}>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-2 sm:px-3 md:px-4 py-3">
+              <div className="w-full max-w-4xl mx-auto space-y-3">
+                {messages.map((message, idx) => {
+                  // Skip the placeholder messages for cards - they're in the sidebar now
+                  if (message.content === '__MEAL_CARDS__' || message.content === '__WORKOUT_CARDS__') {
+                    return null;
+                  }
+            
+                  return (
+                    <div
+                      key={idx}
+                      className={`flex ${message.role === 'user' ? 'justify-end animate-slide-in-right' : 'justify-start animate-slide-in-left'}`}
+                      style={{ animationDelay: `${idx * 50}ms` }}
+                    >
+                      <div
+                        className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-lg sm:rounded-xl p-3 sm:p-3.5 shadow-lg transition-all duration-300 hover:shadow-xl ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                            : 'bg-black/90 backdrop-blur-sm text-[#EFECE3] border border-[#4A70A9]/50'
+                        }`}
+                      >
+                        {message.role === 'assistant' ? (
+                          <div className="prose prose-invert max-w-none markdown-content">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                h1: ({node, ...props}) => <h1 {...props} />,
+                                h2: ({node, ...props}) => <h2 {...props} />,
+                                h3: ({node, ...props}) => <h3 {...props} />,
+                                h4: ({node, ...props}) => <h4 {...props} />,
+                                p: ({node, ...props}) => <p {...props} />,
+                                ul: ({node, ...props}) => <ul {...props} />,
+                                ol: ({node, ...props}) => <ol {...props} />,
+                                li: ({node, ...props}) => <li {...props} />,
+                                strong: ({node, ...props}) => <strong {...props} />,
+                                em: ({node, ...props}) => <em {...props} />,
+                                code: ({node, inline, ...props}: any) => 
+                                  inline ? <code {...props} /> : <code {...props} />,
+                                pre: ({node, ...props}) => <pre {...props} />,
+                                table: ({node, ...props}) => <table {...props} />,
+                                thead: ({node, ...props}) => <thead {...props} />,
+                                tbody: ({node, ...props}) => <tbody {...props} />,
+                                tr: ({node, ...props}) => <tr {...props} />,
+                                th: ({node, ...props}) => <th {...props} />,
+                                td: ({node, ...props}) => <td {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote {...props} />,
+                                a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />,
+                                hr: ({node, ...props}) => <hr {...props} />,
                               }}
-                            />
+                            >
+                              {message.content}
+                            </ReactMarkdown>
                           </div>
-                        ))}
+                        ) : (
+                          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            
+                {/* Voice Recording UI */}
+                {trainerConfig.voiceRecording && voiceRecordingStatus !== 'idle' && (
+                  <div className="flex justify-start animate-slide-in-left">
+                    <div className="bg-black/90 backdrop-blur-sm rounded-xl p-3 border border-[#4A70A9]/50 shadow-lg max-w-[80%]">
+                      <div className="flex items-center gap-3">
+                        {voiceRecordingStatus === 'generating' && (
+                          <>
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] flex items-center justify-center animate-pulse">
+                              <span className="text-xl">🎤</span>
+                            </div>
+                            <div>
+                              <p className="text-[#EFECE3] font-semibold text-sm">Recording voice...</p>
+                              <p className="text-[#8FABD4] text-xs">Generating audio summary</p>
+                            </div>
+                          </>
+                        )}
+                        {voiceRecordingStatus === 'ready' && voiceAudioUrl && (
+                          <>
+                            <button
+                              onClick={() => {
+                                if (audioRef.current) {
+                                  if (audioRef.current.paused) {
+                                    audioRef.current.play();
+                                  } else {
+                                    audioRef.current.pause();
+                                  }
+                                } else {
+                                  const audio = new Audio(voiceAudioUrl);
+                                  audioRef.current = audio;
+                                  audio.play();
+                                  audio.onended = () => {
+                                    audioRef.current = null;
+                                  };
+                                }
+                              }}
+                              className="w-10 h-10 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg shadow-[#8FABD4]/30"
+                            >
+                              <span className="text-xl">▶️</span>
+                            </button>
+                            <div>
+                              <p className="text-[#EFECE3] font-semibold text-sm">Voice Summary</p>
+                              <p className="text-[#8FABD4] text-xs">Click to play audio summary</p>
+                            </div>
+                          </>
+                        )}
+                        {voiceRecordingStatus === 'error' && (
+                          <>
+                            <div className="w-10 h-10 rounded-full bg-red-900/50 flex items-center justify-center">
+                              <span className="text-xl">⚠️</span>
+                            </div>
+                            <div>
+                              <p className="text-[#EFECE3] font-semibold text-sm">Voice generation failed</p>
+                              <p className="text-[#8FABD4] text-xs">Text summary is still available above</p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            }
-            
-            // Special handling for workout cards
-            if (message.content === '__WORKOUT_CARDS__' && workoutData) {
-              return (
-                <div 
-                  key={idx} 
-                  className="flex justify-start animate-slide-in-left"
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                >
-                  <div className="max-w-[90%] sm:max-w-[85%] md:max-w-[80%] w-full">
-                    <div className="bg-black/90 backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 border border-[#4A70A9]/50">
-                      <h4 className="font-semibold mb-4 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Your Workout Plan</h4>
-                      <div className="space-y-3">
-                        {workoutData.map((workout: WorkoutCardType, workoutIdx: number) => (
-                          <div
-                            key={workoutIdx}
-                            className="animate-slide-in-left"
-                            style={{ animationDelay: `${workoutIdx * 100}ms` }}
-                          >
-                            <WorkoutCard
-                              workout={workout}
-                              onClick={() => {
-                                setSelectedWorkout(workout);
-                                setIsWorkoutModalOpen(true);
-                              }}
-                            />
-                          </div>
-                        ))}
+                )}
+                
+                {(isLoading || generatingPlan) && (
+                  <div className="flex justify-start animate-slide-in-left">
+                    <div className="bg-black/90 backdrop-blur-sm rounded-xl p-3 border border-[#4A70A9]/50 shadow-lg">
+                      <div className="flex gap-2">
+                        <div className="w-2.5 h-2.5 bg-[#8FABD4] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2.5 h-2.5 bg-[#4A70A9] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2.5 h-2.5 bg-[#8FABD4] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            }
-            
-            return (
-                <div
-                  key={idx}
-                  className={`flex ${message.role === 'user' ? 'justify-end animate-slide-in-right' : 'justify-start animate-slide-in-left'}`}
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                )}
+                
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Input Area */}
+            <div className="bg-black/80 backdrop-blur-xl border-t border-[#4A70A9]/50 px-2 sm:px-3 md:px-4 py-2 shadow-2xl">
+              <div className="w-full max-w-4xl mx-auto flex gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                  placeholder="Ask your trainer anything..."
+                  disabled={isLoading}
+                  className="flex-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg px-3 sm:px-4 py-2.5 text-sm text-[#EFECE3] placeholder-[#8FABD4]/50 focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all duration-300 disabled:opacity-50 hover:border-[#8FABD4]"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={isLoading || !input.trim()}
+                  className="px-5 sm:px-6 py-2.5 bg-gradient-to-r from-[#4A70A9] via-[#8FABD4] to-[#4A70A9] hover:from-[#8FABD4] hover:via-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:via-black disabled:to-black disabled:opacity-50 rounded-lg font-semibold text-sm text-[#EFECE3] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none touch-manipulation"
                 >
-                  <div
-                    className={`max-w-[90%] sm:max-w-[85%] md:max-w-[80%] rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-5 shadow-lg transition-all duration-300 hover:shadow-xl ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-br from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
-                        : 'bg-black/90 backdrop-blur-sm text-[#EFECE3] border border-[#4A70A9]/50'
-                    }`}
-                  >
-                    {message.role === 'assistant' ? (
-                      <div className="prose prose-invert max-w-none markdown-content">
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            h1: ({node, ...props}) => <h1 {...props} />,
-                            h2: ({node, ...props}) => <h2 {...props} />,
-                            h3: ({node, ...props}) => <h3 {...props} />,
-                            h4: ({node, ...props}) => <h4 {...props} />,
-                            p: ({node, ...props}) => <p {...props} />,
-                            ul: ({node, ...props}) => <ul {...props} />,
-                            ol: ({node, ...props}) => <ol {...props} />,
-                            li: ({node, ...props}) => <li {...props} />,
-                            strong: ({node, ...props}) => <strong {...props} />,
-                            em: ({node, ...props}) => <em {...props} />,
-                            code: ({node, inline, ...props}: any) => 
-                              inline ? <code {...props} /> : <code {...props} />,
-                            pre: ({node, ...props}) => <pre {...props} />,
-                            table: ({node, ...props}) => <table {...props} />,
-                            thead: ({node, ...props}) => <thead {...props} />,
-                            tbody: ({node, ...props}) => <tbody {...props} />,
-                            tr: ({node, ...props}) => <tr {...props} />,
-                            th: ({node, ...props}) => <th {...props} />,
-                            td: ({node, ...props}) => <td {...props} />,
-                            blockquote: ({node, ...props}) => <blockquote {...props} />,
-                            a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />,
-                            hr: ({node, ...props}) => <hr {...props} />,
-                          }}
-                        >
-                          {message.content}
-                        </ReactMarkdown>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side: Plans Display (30%) - Always visible on desktop, controlled by mobileView on mobile */}
+          <div 
+            className={`
+              ${(mobileView === 'workout' || mobileView === 'nutrition') ? 'flex' : 'hidden'} md:flex
+              flex-col
+              border-l border-[#4A70A9]/50 overflow-hidden bg-black/95 md:bg-black/40
+              w-full md:w-[30%]
+            `}
+          >
+            {/* Sidebar Header with Tabs - Desktop Only */}
+            <div className="hidden md:flex bg-black/80 backdrop-blur-xl border-b border-[#4A70A9]/50 p-2 items-center gap-2">
+              <button
+                onClick={() => {
+                  setActiveTab('nutrition');
+                  setMobileView('nutrition'); // Keep in sync
+                }}
+                className={`flex-1 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-300 ${
+                  activeTab === 'nutrition'
+                    ? 'bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] text-[#EFECE3]'
+                    : 'text-[#8FABD4] hover:text-[#EFECE3] bg-black/50'
+                }`}
+              >
+                🥗 Nutrition
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('workout');
+                  setMobileView('workout'); // Keep in sync
+                }}
+                className={`flex-1 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all duration-300 ${
+                  activeTab === 'workout'
+                    ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                    : 'text-[#8FABD4] hover:text-[#EFECE3] bg-black/50'
+                }`}
+              >
+                🏋️ Workout
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-3">
+              {/* Nutrition Tab Content */}
+              {(mobileView === 'nutrition' || activeTab === 'nutrition') && (
+                <>
+                  {nutritionData ? (
+                    <div className="animate-slide-in-left">
+                      <div className="bg-gradient-to-br from-[#4A70A9]/20 via-black/95 to-[#8FABD4]/20 backdrop-blur-sm rounded-xl p-3 border-2 border-[#8FABD4]/70 shadow-xl shadow-[#8FABD4]/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl">🥗</span>
+                          <h4 className="text-sm font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Nutrition Plan</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {nutritionData.map((meal: MealCardData, mealIdx: number) => (
+                            <div
+                              key={mealIdx}
+                              className="animate-slide-in-left"
+                              style={{ animationDelay: `${mealIdx * 100}ms` }}
+                            >
+                              <MealCard
+                                meal={meal}
+                                onClick={() => {
+                                  setSelectedMeal(meal);
+                                  setIsMealModalOpen(true);
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            
-            {/* Voice Recording UI */}
-            {trainerConfig.voiceRecording && voiceRecordingStatus !== 'idle' && (
-              <div className="flex justify-start animate-slide-in-left mt-4">
-                <div className="bg-black/90 backdrop-blur-sm rounded-2xl p-5 border border-[#4A70A9]/50 shadow-lg max-w-[80%]">
-                  <div className="flex items-center gap-4">
-                    {voiceRecordingStatus === 'generating' && (
-                      <>
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] flex items-center justify-center animate-pulse">
-                          <span className="text-2xl">🎤</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                      <div className="text-4xl mb-3">🥗</div>
+                      <p className="text-[#8FABD4] text-sm mb-4">No nutrition plan yet</p>
+                      <button
+                        onClick={() => generatePlan('nutrition')}
+                        disabled={generatingPlan !== null}
+                        className="px-4 py-2 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:to-black disabled:opacity-50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3]"
+                      >
+                        Generate Nutrition Plan
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Workout Tab Content */}
+              {(mobileView === 'workout' || activeTab === 'workout') && (
+                <>
+                  {workoutData ? (
+                    <div className="animate-slide-in-left">
+                      <div className="bg-gradient-to-br from-[#8FABD4]/20 via-black/95 to-[#4A70A9]/20 backdrop-blur-sm rounded-xl p-3 border-2 border-[#4A70A9]/70 shadow-xl shadow-[#4A70A9]/30">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-xl">🏋️</span>
+                          <h4 className="text-sm font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">Workout Plan</h4>
                         </div>
-                        <div>
-                          <p className="text-[#EFECE3] font-semibold">Recording voice...</p>
-                          <p className="text-[#8FABD4] text-sm">Generating audio summary</p>
+                        <div className="space-y-2">
+                          {workoutData.map((workout: WorkoutCardType, workoutIdx: number) => (
+                            <div
+                              key={workoutIdx}
+                              className="animate-slide-in-left"
+                              style={{ animationDelay: `${workoutIdx * 100}ms` }}
+                            >
+                              <WorkoutCard
+                                workout={workout}
+                                onClick={() => {
+                                  setSelectedWorkout(workout);
+                                  setIsWorkoutModalOpen(true);
+                                }}
+                              />
+                            </div>
+                          ))}
                         </div>
-                      </>
-                    )}
-                    {voiceRecordingStatus === 'ready' && voiceAudioUrl && (
-                      <>
-                        <button
-                          onClick={() => {
-                            if (audioRef.current) {
-                              if (audioRef.current.paused) {
-                                audioRef.current.play();
-                              } else {
-                                audioRef.current.pause();
-                              }
-                            } else {
-                              const audio = new Audio(voiceAudioUrl);
-                              audioRef.current = audio;
-                              audio.play();
-                              audio.onended = () => {
-                                audioRef.current = null;
-                              };
-                            }
-                          }}
-                          className="w-12 h-12 rounded-full bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] flex items-center justify-center transition-all duration-300 transform hover:scale-110 shadow-lg shadow-[#8FABD4]/30"
-                        >
-                          <span className="text-2xl">▶️</span>
-                        </button>
-                        <div>
-                          <p className="text-[#EFECE3] font-semibold">Voice Summary</p>
-                          <p className="text-[#8FABD4] text-sm">Click to play audio summary</p>
-                        </div>
-                      </>
-                    )}
-                    {voiceRecordingStatus === 'error' && (
-                      <>
-                        <div className="w-12 h-12 rounded-full bg-red-900/50 flex items-center justify-center">
-                          <span className="text-2xl">⚠️</span>
-                        </div>
-                        <div>
-                          <p className="text-[#EFECE3] font-semibold">Voice generation failed</p>
-                          <p className="text-[#8FABD4] text-sm">Text summary is still available above</p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {(isLoading || generatingPlan) && (
-              <div className="flex justify-start animate-slide-in-left">
-                <div className="bg-black/90 backdrop-blur-sm rounded-2xl p-5 border border-[#4A70A9]/50 shadow-lg">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 bg-[#8FABD4] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-3 h-3 bg-[#4A70A9] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-3 h-3 bg-[#8FABD4] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                      <div className="text-4xl mb-3">🏋️</div>
+                      <p className="text-[#8FABD4] text-sm mb-4">No workout plan yet</p>
+                      <button
+                        onClick={() => generatePlan('workout')}
+                        disabled={generatingPlan !== null}
+                        className="px-4 py-2 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] disabled:from-black disabled:to-black disabled:opacity-50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3]"
+                      >
+                        Generate Workout Plan
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="bg-black/80 backdrop-blur-xl border-t border-[#4A70A9]/50 px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5 shadow-2xl">
-          <div className="w-full px-2 sm:px-3 md:w-[90%] lg:w-[85%] xl:w-[70%] mx-auto flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder="Ask your trainer anything..."
-              disabled={isLoading}
-              className="flex-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg sm:rounded-xl px-3 sm:px-4 md:px-5 py-3 sm:py-3 md:py-4 text-sm sm:text-base text-[#EFECE3] placeholder-[#8FABD4]/50 focus:ring-2 focus:ring-[#8FABD4]/50 focus:border-[#8FABD4]/50 outline-none transition-all duration-300 disabled:opacity-50 hover:border-[#8FABD4]"
-            />
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-xl border-t border-[#4A70A9]/50 px-2 py-2 z-50">
+          <div className="flex items-center justify-around gap-2">
             <button
-              onClick={sendMessage}
-              disabled={isLoading || !input.trim()}
-              className="px-4 sm:px-6 md:px-8 py-3 sm:py-3 md:py-4 bg-gradient-to-r from-[#4A70A9] via-[#8FABD4] to-[#4A70A9] hover:from-[#8FABD4] hover:via-[#4A70A9] hover:to-[#8FABD4] disabled:from-black disabled:via-black disabled:to-black disabled:opacity-50 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base text-[#EFECE3] transition-all duration-300 transform hover:scale-105 active:scale-95 hover:shadow-lg hover:shadow-[#8FABD4]/50 disabled:scale-100 disabled:shadow-none min-h-[44px] touch-manipulation"
+              onClick={() => setMobileView('chat')}
+              className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg transition-all duration-300 ${
+                mobileView === 'chat'
+                  ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                  : 'text-[#8FABD4] hover:text-[#EFECE3]'
+              }`}
             >
-              Send
+              <span className="text-xl">💬</span>
+              <span className="text-xs font-semibold">Chat</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileView('workout');
+                setActiveTab('workout');
+              }}
+              className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg transition-all duration-300 ${
+                mobileView === 'workout'
+                  ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                  : 'text-[#8FABD4] hover:text-[#EFECE3]'
+              }`}
+            >
+              <span className="text-xl">🏋️</span>
+              <span className="text-xs font-semibold">Workout</span>
+            </button>
+            <button
+              onClick={() => {
+                setMobileView('nutrition');
+                setActiveTab('nutrition');
+              }}
+              className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-lg transition-all duration-300 ${
+                mobileView === 'nutrition'
+                  ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
+                  : 'text-[#8FABD4] hover:text-[#EFECE3]'
+              }`}
+            >
+              <span className="text-xl">🥗</span>
+              <span className="text-xs font-semibold">Nutrition</span>
             </button>
           </div>
         </div>

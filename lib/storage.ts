@@ -1,7 +1,8 @@
-import { UserProfile, Message, TrainerPersona } from './types';
+import { UserProfile, Message, TrainerPersona, WorkoutCard, MealCardData } from './types';
 
 const STORAGE_KEY = 'fitness-demo-user-profile';
 const CONVERSATIONS_KEY = 'fitness-demo-conversations';
+const PLANS_KEY = 'fitness-demo-plans';
 
 export function saveUserProfile(profile: UserProfile): void {
   try {
@@ -92,6 +93,79 @@ export function clearAllConversations(): void {
     localStorage.removeItem(CONVERSATIONS_KEY);
   } catch (error) {
     console.error('Failed to clear all conversations from localStorage:', error);
+  }
+}
+
+// Plans storage functions
+interface PlanData {
+  workoutPlan: WorkoutCard[] | null;
+  nutritionPlan: MealCardData[] | null;
+  dailyTargets: any | null;
+  lastUpdated: number;
+}
+
+interface PlansStorage {
+  [trainerId: string]: PlanData;
+}
+
+export function savePlans(
+  trainerId: TrainerPersona, 
+  workoutPlan: WorkoutCard[] | null, 
+  nutritionPlan: MealCardData[] | null,
+  dailyTargets: any | null
+): void {
+  try {
+    const stored = localStorage.getItem(PLANS_KEY);
+    const plans: PlansStorage = stored ? JSON.parse(stored) : {};
+    
+    plans[trainerId] = {
+      workoutPlan,
+      nutritionPlan,
+      dailyTargets,
+      lastUpdated: Date.now(),
+    };
+    
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+  } catch (error) {
+    console.error('Failed to save plans to localStorage:', error);
+  }
+}
+
+export function loadPlans(trainerId: TrainerPersona): PlanData | null {
+  try {
+    const stored = localStorage.getItem(PLANS_KEY);
+    if (stored) {
+      const plans: PlansStorage = JSON.parse(stored);
+      const plan = plans[trainerId];
+      
+      if (plan) {
+        return plan;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load plans from localStorage:', error);
+  }
+  return null;
+}
+
+export function clearPlans(trainerId: TrainerPersona): void {
+  try {
+    const stored = localStorage.getItem(PLANS_KEY);
+    if (stored) {
+      const plans: PlansStorage = JSON.parse(stored);
+      delete plans[trainerId];
+      localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+    }
+  } catch (error) {
+    console.error('Failed to clear plans from localStorage:', error);
+  }
+}
+
+export function clearAllPlans(): void {
+  try {
+    localStorage.removeItem(PLANS_KEY);
+  } catch (error) {
+    console.error('Failed to clear all plans from localStorage:', error);
   }
 }
 
