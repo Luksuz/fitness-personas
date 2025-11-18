@@ -27,7 +27,7 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
     const cmValue = heightUnit === 'ft' ? feetToCm(value) : value;
     onChange({ 
       height: cmValue,
-      unitPreferences: { ...profile.unitPreferences, height: heightUnit }
+      unitPreferences: { height: heightUnit, weight: weightUnit }
     });
   };
 
@@ -35,7 +35,7 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
     const kgValue = weightUnit === 'lbs' ? lbsToKg(value) : value;
     onChange({ 
       weight: kgValue,
-      unitPreferences: { ...profile.unitPreferences, weight: weightUnit }
+      unitPreferences: { height: heightUnit, weight: weightUnit }
     });
   };
 
@@ -43,7 +43,7 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
     const newUnit = heightUnit === 'cm' ? 'ft' : 'cm';
     setHeightUnit(newUnit);
     onChange({ 
-      unitPreferences: { ...profile.unitPreferences, height: newUnit }
+      unitPreferences: { height: newUnit, weight: weightUnit }
     });
   };
 
@@ -51,7 +51,7 @@ export default function BasicInfoStep({ profile, onChange }: BasicInfoStepProps)
     const newUnit = weightUnit === 'kg' ? 'lbs' : 'kg';
     setWeightUnit(newUnit);
     onChange({ 
-      unitPreferences: { ...profile.unitPreferences, weight: newUnit }
+      unitPreferences: { height: heightUnit, weight: newUnit }
     });
   };
 
