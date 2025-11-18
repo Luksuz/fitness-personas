@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
-import RecommendedTrainers from '@/components/RecommendedTrainers';
 import TrainerSelection from '@/components/TrainerSelection';
 import { TrainerPersona, UserProfile } from '@/lib/types';
 import { loadUserProfile } from '@/lib/storage';
@@ -84,24 +83,14 @@ export default function Home() {
           <OnboardingWizard onComplete={handleOnboardingComplete} />
         )}
 
-        {/* Recommended Trainers (after onboarding) */}
+        {/* Trainer Selection (after onboarding) */}
         {!showOnboarding && userProfile && (
-          <>
-            <div className="mb-12">
-              <RecommendedTrainers
-                profile={userProfile}
-                onSelect={handleTrainerSelect}
-              />
-            </div>
-
-            {/* All Trainers Section */}
-            <div id="all-trainers" className="pt-8 border-t border-[#4A70A9]/30">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-[#EFECE3]">
-                {userProfile.language === 'hr' ? 'Svi Treneri' : 'All Trainers'}
-              </h2>
-        <TrainerSelection onSelect={handleTrainerSelect} />
-            </div>
-          </>
+          <div className="mb-12">
+            <TrainerSelection 
+              onSelect={handleTrainerSelect}
+              profile={userProfile}
+            />
+          </div>
         )}
       </div>
     </main>

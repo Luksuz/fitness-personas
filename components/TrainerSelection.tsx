@@ -2,20 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { TrainerPersona } from '@/lib/types';
+import { TrainerPersona, UserProfile } from '@/lib/types';
 import { TRAINER_PERSONAS, getAllPersonas, getPersonaConfig } from '@/lib/personas';
 import { loadCustomTrainers, deleteCustomTrainer, CustomTrainer } from '@/lib/customTrainers';
+import { getRecommendedTrainers } from '@/lib/recommendations';
 import CreateCustomTrainerModal from './CreateCustomTrainerModal';
 
 interface TrainerSelectionProps {
   onSelect: (trainer: TrainerPersona) => void;
+  profile?: UserProfile | null;
 }
 
-export default function TrainerSelection({ onSelect }: TrainerSelectionProps) {
+export default function TrainerSelection({ onSelect, profile }: TrainerSelectionProps) {
   const builtInTrainers: TrainerPersona[] = ['mike', 'goggins', 'arnold', 'kayla', 'chris', 'jeff', 'jen', 'cassey', 'marino', 'josip'];
   const [customTrainers, setCustomTrainers] = useState<CustomTrainer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<CustomTrainer | null>(null);
+  
+  // Get recommendations if profile exists
+  const recommendations = profile ? getRecommendedTrainers(profile) : [];
+  const getTrainerRecommendation = (trainerId: TrainerPersona) => {
+    return recommendations.find(rec => rec.persona === trainerId);
+  };
 
   useEffect(() => {
     setCustomTrainers(loadCustomTrainers());
@@ -70,15 +78,46 @@ export default function TrainerSelection({ onSelect }: TrainerSelectionProps) {
       <div className="mb-8 sm:mb-12">
         <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-[#8FABD4]">Ugrađeni Treneri</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-          {builtInTrainers.map((trainerId) => {
+          {builtInTrainers.map((trainerId, index) => {
             const trainer = TRAINER_PERSONAS[trainerId];
+            const recommendation = getTrainerRecommendation(trainerId);
+            const isTopPick = recommendation && recommendations[0]?.persona === trainerId;
           
           return (
             <div
               key={trainerId}
               onClick={() => onSelect(trainerId)}
-              className="bg-black/80 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-[#4A70A9]/50 hover:border-[#8FABD4] hover:shadow-xl hover:shadow-[#8FABD4]/20 group touch-manipulation"
+              className="bg-black/80 backdrop-blur-sm rounded-2xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-[#4A70A9]/50 hover:border-[#8FABD4] hover:shadow-xl hover:shadow-[#8FABD4]/20 group touch-manipulation relative"
             >
+              {/* Recommendation Badge */}
+              {recommendation && (
+                <div className="absolute top-3 right-3 z-10 group/badge">
+                  <div className={`
+                    px-3 py-1.5 rounded-full text-xs font-bold text-white flex items-center gap-1
+                    ${isTopPick 
+                      ? 'bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] shadow-lg shadow-[#8FABD4]/50' 
+                      : 'bg-[#4A70A9]/90'}
+                  `}>
+                    {isTopPick ? '⭐' : '✓'} {Math.min(recommendation.score, 100)}%
+                  </div>
+                  
+                  {/* Hover Tooltip */}
+                  <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-black/95 backdrop-blur-sm border border-[#8FABD4]/50 rounded-lg shadow-xl opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-200 pointer-events-none z-20">
+                    <p className="text-xs font-semibold text-[#8FABD4] mb-2">
+                      {profile?.language === 'hr' ? 'Zašto preporučamo:' : 'Why recommended:'}
+                    </p>
+                    <ul className="space-y-1">
+                      {recommendation.reasons.map((reason, idx) => (
+                        <li key={idx} className="text-xs text-[#EFECE3]/80 flex items-start gap-1">
+                          <span className="text-[#8FABD4] mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
               {/* Trainer Image */}
               <div className="relative h-64 w-full overflow-hidden">
                 <Image

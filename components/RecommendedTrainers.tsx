@@ -94,7 +94,7 @@ export default function RecommendedTrainers({ profile, onSelect }: RecommendedTr
               </h3>
 
               {/* Style */}
-              <p className="text-sm text-[#8FABD4]/80 mb-3">{config.style}</p>
+              <p className="text-sm text-[#8FABD4]/80 mb-3">{config.description}</p>
 
               {/* Reasons */}
               <div className="space-y-1">
