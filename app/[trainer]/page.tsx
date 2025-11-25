@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ChatInterface from '@/components/ChatInterface';
 import { TrainerPersona, UserProfile } from '@/lib/types';
-import { loadUserProfile } from '@/lib/storage';
+import { loadUserProfile, saveUserProfile } from '@/lib/storage';
 import { getPersonaConfig } from '@/lib/personas';
 
 export default function TrainerPage() {
@@ -38,6 +38,7 @@ export default function TrainerPage() {
 
   const handleProfileUpdate = (profile: UserProfile) => {
     setUserProfile(profile);
+    saveUserProfile(profile); // Persist language and other profile changes
   };
 
   const handleReset = () => {

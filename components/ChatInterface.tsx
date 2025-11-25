@@ -6,12 +6,25 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { TrainerPersona, UserProfile, Message, WorkoutCard as WorkoutCardType, MealCardData } from '@/lib/types';
 import { getPersonaConfig } from '@/lib/personas';
-import { saveConversation, loadConversation, clearConversation, savePlans, loadPlans, clearPlans } from '@/lib/storage';
+import { 
+  savePlans, 
+  loadPlans, 
+  clearPlans,
+  ChatSession,
+  saveChatSession,
+  loadChatSession,
+  loadChatHistory,
+  createNewChatSession,
+  getActiveSessionId,
+  setActiveSession,
+  deleteChatSession,
+} from '@/lib/storage';
 import MealCard from './MealCard';
 import MealModal from './MealModal';
 import WorkoutCard from './WorkoutCard';
 import WorkoutModal from './WorkoutModal';
 import UserProfileModal from './UserProfileModal';
+import ChatHistory from './ChatHistory';
 
 interface ChatInterfaceProps {
   trainer: TrainerPersona;
@@ -36,9 +49,13 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
   const [currentProfile, setCurrentProfile] = useState<UserProfile>(userProfile);
   const [voiceRecordingStatus, setVoiceRecordingStatus] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'en' | 'hr'>('hr');
+  const [language, setLanguage] = useState<'en' | 'hr'>(userProfile.language || 'en');
   const [activeTab, setActiveTab] = useState<'workout' | 'nutrition'>('nutrition');
   const [mobileView, setMobileView] = useState<'chat' | 'workout' | 'nutrition'>('chat');
+  // Chat history state
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasGeneratedGreeting = useRef(false);
@@ -49,19 +66,43 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     return <div>Trainer not found</div>;
   }
 
-  // Sync profile when prop changes
+  // Sync profile and language when prop changes
   useEffect(() => {
     setCurrentProfile(userProfile);
+    // Also sync language from profile
+    if (userProfile.language) {
+      setLanguage(userProfile.language);
+    }
   }, [userProfile]);
 
-  // Load conversation and plans from localStorage on mount
+  // Load chat history and active session on mount
   useEffect(() => {
-    const savedConversation = loadConversation(trainer);
-    if (savedConversation && savedConversation.length > 0) {
-      setMessages(savedConversation);
-      hasGeneratedGreeting.current = true; // Skip greeting generation if we have saved messages
+    // Load chat history
+    const history = loadChatHistory(trainer);
+    setChatHistory(history);
+    
+    // Get or create active session
+    let sessionId = getActiveSessionId(trainer);
+    
+    if (sessionId) {
+      // Load existing session
+      const session = loadChatSession(trainer, sessionId);
+      if (session && session.messages.length > 0) {
+        setMessages(session.messages);
+        setActiveSessionId(sessionId);
+        hasGeneratedGreeting.current = true; // Skip greeting generation
+      } else {
+        // Session not found or empty, create new
+        sessionId = createNewChatSession(trainer);
+        setActiveSessionId(sessionId);
+      }
+    } else {
+      // No active session, create new
+      sessionId = createNewChatSession(trainer);
+      setActiveSessionId(sessionId);
     }
     
+    // Load plans
     const savedPlans = loadPlans(trainer);
     if (savedPlans) {
       if (savedPlans.workoutPlan) {
@@ -76,13 +117,15 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     }
   }, [trainer]);
 
-  // Save conversation to localStorage whenever messages change (after streaming is complete)
+  // Save conversation to chat history whenever messages change (after streaming is complete)
   useEffect(() => {
-    if (messages.length > 0 && !isLoading && generatingPlan === null) {
-      // Only save when not currently loading/streaming
-      saveConversation(trainer, messages);
+    if (messages.length > 0 && !isLoading && generatingPlan === null && activeSessionId) {
+      // Save to chat session
+      saveChatSession(trainer, activeSessionId, messages);
+      // Update local history state
+      setChatHistory(loadChatHistory(trainer));
     }
-  }, [messages, isLoading, generatingPlan, trainer]);
+  }, [messages, isLoading, generatingPlan, trainer, activeSessionId]);
 
   // Save plans to localStorage whenever they change (after generation is complete)
   useEffect(() => {
@@ -95,6 +138,38 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Chat history handlers
+  const handleSelectSession = (sessionId: string) => {
+    const session = loadChatSession(trainer, sessionId);
+    if (session) {
+      setMessages(session.messages);
+      setActiveSessionId(sessionId);
+      setActiveSession(trainer, sessionId);
+      hasGeneratedGreeting.current = true;
+    }
+  };
+
+  const handleNewChat = () => {
+    const newSessionId = createNewChatSession(trainer);
+    setActiveSessionId(newSessionId);
+    setMessages([]);
+    hasGeneratedGreeting.current = false;
+    // Reset plans for new chat
+    setWorkoutData(null);
+    setNutritionData(null);
+    setDailyTargets(null);
+  };
+
+  const handleDeleteSession = (sessionId: string) => {
+    deleteChatSession(trainer, sessionId);
+    setChatHistory(loadChatHistory(trainer));
+    
+    // If deleting active session, start new chat
+    if (sessionId === activeSessionId) {
+      handleNewChat();
+    }
+  };
 
   const handleProfileSave = (profile: UserProfile) => {
     setCurrentProfile(profile);
@@ -594,6 +669,18 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
         onSave={handleProfileSave}
       />
       
+      {/* Chat History Sidebar */}
+      <ChatHistory
+        sessions={chatHistory}
+        activeSessionId={activeSessionId}
+        onSelectSession={handleSelectSession}
+        onNewChat={handleNewChat}
+        onDeleteSession={handleDeleteSession}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        language={language}
+      />
+      
       {/* Full Viewport Chat Interface with Split Layout */}
       <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000]">
         {/* Header - Compact */}
@@ -633,7 +720,15 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               {/* Language Selector */}
               <div className="flex items-center gap-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg overflow-hidden">
                 <button
-                  onClick={() => setLanguage('en')}
+                  onClick={() => {
+                    setLanguage('en');
+                    // Also update the profile so language persists
+                    const updatedProfile = { ...currentProfile, language: 'en' as const };
+                    setCurrentProfile(updatedProfile);
+                    if (onProfileUpdate) {
+                      onProfileUpdate(updatedProfile);
+                    }
+                  }}
                   className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
                     language === 'en'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
@@ -644,7 +739,15 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                 </button>
                 <div className="w-px h-4 bg-[#4A70A9]/50"></div>
                 <button
-                  onClick={() => setLanguage('hr')}
+                  onClick={() => {
+                    setLanguage('hr');
+                    // Also update the profile so language persists
+                    const updatedProfile = { ...currentProfile, language: 'hr' as const };
+                    setCurrentProfile(updatedProfile);
+                    if (onProfileUpdate) {
+                      onProfileUpdate(updatedProfile);
+                    }
+                  }}
                   className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
                     language === 'hr'
                       ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
@@ -654,6 +757,29 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
                   HR
                 </button>
               </div>
+              {/* Chat History Button */}
+              <button
+                onClick={() => setIsHistoryOpen(true)}
+                className="px-2 sm:px-3 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95 relative"
+                title={language === 'hr' ? 'Povijest razgovora' : 'Chat history'}
+              >
+                <span className="hidden sm:inline">📜 {language === 'hr' ? 'Povijest' : 'History'}</span>
+                <span className="sm:hidden">📜</span>
+                {chatHistory.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] rounded-full text-[10px] flex items-center justify-center text-[#EFECE3] font-bold">
+                    {chatHistory.length > 9 ? '9+' : chatHistory.length}
+                  </span>
+                )}
+              </button>
+              {/* New Chat Button */}
+              <button
+                onClick={handleNewChat}
+                className="px-2 sm:px-3 py-1.5 bg-gradient-to-r from-[#4A70A9]/50 to-[#8FABD4]/50 hover:from-[#4A70A9] hover:to-[#8FABD4] border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95"
+                title={language === 'hr' ? 'Novi razgovor' : 'New chat'}
+              >
+                <span className="hidden sm:inline">✨ {language === 'hr' ? 'Novi' : 'New'}</span>
+                <span className="sm:hidden">✨</span>
+              </button>
               <button
                 onClick={() => setIsProfileModalOpen(true)}
                 className="px-2 sm:px-3 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95"

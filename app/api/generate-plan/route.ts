@@ -11,7 +11,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userProfile, persona, planType, language = 'en', systemPrompt: providedSystemPrompt } = await req.json();
+    const { userProfile, persona, planType, language: providedLanguage, systemPrompt: providedSystemPrompt } = await req.json();
+    
+    // Use provided language, fall back to userProfile.language, then default to 'en'
+    const language = providedLanguage || userProfile?.language || 'en';
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -56,12 +59,17 @@ async function generateWorkoutPlanStreaming(
   // Use provided system prompt (for custom trainers) or get from personas
   const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
-  // Add language instruction
+  // CRITICAL: Language instruction comes FIRST so it's not ignored
   const languageInstruction = language === 'hr' 
-    ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses, including introMessage, outroMessage, and voice_recording_text must be in Croatian language.'
-    : '\n\nIMPORTANT: Respond in English. All your responses, including introMessage, outroMessage, and voice_recording_text must be in English language.';
+    ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian, including introMessage, outroMessage, and voice_recording_text. Do not use any English words or phrases.
+
+`
+    : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English, including introMessage, outroMessage, and voice_recording_text. Do not use any Croatian or other language words or phrases.
+
+`;
   
-  const systemPrompt = baseSystemPrompt + languageInstruction;
+  // Prepend language instruction so it takes priority
+  const systemPrompt = languageInstruction + baseSystemPrompt;
   
   const isAdvancedStrength = userProfile.experienceLevel === 'advanced' && userProfile.focusArea === 'strength';
   
@@ -369,12 +377,17 @@ async function generateNutritionPlanStreaming(
   // Use provided system prompt (for custom trainers) or get from personas
   const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
-  // Add language instruction
+  // CRITICAL: Language instruction comes FIRST so it's not ignored
   const languageInstruction = language === 'hr' 
-    ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses, including introMessage, outroMessage, and voice_recording_text must be in Croatian language.'
-    : '\n\nIMPORTANT: Respond in English. All your responses, including introMessage, outroMessage, and voice_recording_text must be in English language.';
+    ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian, including introMessage, outroMessage, and voice_recording_text. Do not use any English words or phrases.
+
+`
+    : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English, including introMessage, outroMessage, and voice_recording_text. Do not use any Croatian or other language words or phrases.
+
+`;
   
-  const systemPrompt = baseSystemPrompt + languageInstruction;
+  // Prepend language instruction so it takes priority
+  const systemPrompt = languageInstruction + baseSystemPrompt;
   
   const foodsJson = JSON.stringify(foods.slice(0, 150), null, 2);
   

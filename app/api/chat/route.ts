@@ -9,7 +9,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, persona, userProfile, language = 'hr', systemPrompt: providedSystemPrompt } = await req.json();
+    const { messages, persona, userProfile, language: providedLanguage, systemPrompt: providedSystemPrompt } = await req.json();
+    
+    // Use provided language, fall back to userProfile.language, then default to 'en'
+    const language = providedLanguage || userProfile?.language || 'en';
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -27,14 +30,19 @@ export async function POST(req: NextRequest) {
 
     // Build the message history
     // Use provided system prompt (for custom trainers) or get from personas
-    const systemPrompt = providedSystemPrompt || getPersonaPrompt(persona as TrainerPersona);
+    const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona as TrainerPersona);
     
-    // Add language instruction
+    // CRITICAL: Language instruction comes FIRST so it's not ignored
     const languageInstruction = language === 'hr' 
-      ? '\n\nIMPORTANT: Respond in Croatian (Hrvatski). All your responses must be in Croatian language.'
-      : '\n\nIMPORTANT: Respond in English. All your responses must be in English language.';
+      ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian. Do not use any English words or phrases.
+
+`
+      : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English. Do not use any Croatian or other language words or phrases.
+
+`;
     
-    let fullSystemPrompt = systemPrompt + languageInstruction;
+    // Prepend language instruction so it takes priority
+    let fullSystemPrompt = languageInstruction + baseSystemPrompt;
     
     // Add user profile context if available
     if (userProfile) {
