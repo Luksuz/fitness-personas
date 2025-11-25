@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChatSession } from '@/lib/storage';
+import { Language, t } from '@/lib/translations';
 
 interface ChatHistoryProps {
   sessions: ChatSession[];
@@ -12,7 +13,7 @@ interface ChatHistoryProps {
   onDeleteSession: (sessionId: string) => void;
   isOpen: boolean;
   onClose: () => void;
-  language: 'en' | 'hr';
+  language: Language;
 }
 
 export default function ChatHistory({
@@ -33,13 +34,19 @@ export default function ChatHistory({
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) {
-      return language === 'hr' ? 'Danas' : 'Today';
+      return t(language, 'today');
     } else if (diffDays === 1) {
-      return language === 'hr' ? 'Jučer' : 'Yesterday';
+      return t(language, 'yesterday');
     } else if (diffDays < 7) {
-      return `${diffDays} ${language === 'hr' ? 'dana' : 'days ago'}`;
+      return `${diffDays} ${t(language, 'daysAgo')}`;
     } else {
-      return date.toLocaleDateString(language === 'hr' ? 'hr-HR' : 'en-US', {
+      // Map language code to locale
+      const localeMap: Record<string, string> = {
+        en: 'en-US', hr: 'hr-HR', de: 'de-DE', es: 'es-ES',
+        fr: 'fr-FR', it: 'it-IT', pt: 'pt-PT', nl: 'nl-NL',
+        pl: 'pl-PL', ru: 'ru-RU'
+      };
+      return date.toLocaleDateString(localeMap[language] || 'en-US', {
         month: 'short',
         day: 'numeric',
       });
@@ -83,7 +90,7 @@ export default function ChatHistory({
             <div className="p-4 border-b border-[#4A70A9]/30">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
-                  {language === 'hr' ? '📜 Povijest Razgovora' : '📜 Chat History'}
+                  {t(language, 'chatHistoryTitle')}
                 </h2>
                 <button
                   onClick={onClose}
@@ -102,7 +109,7 @@ export default function ChatHistory({
                 className="w-full py-3 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] hover:from-[#8FABD4] hover:to-[#4A70A9] rounded-xl font-semibold text-sm text-[#EFECE3] transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-[#4A70A9]/30"
               >
                 <span>✨</span>
-                {language === 'hr' ? 'Novi Razgovor' : 'New Chat'}
+                {t(language, 'newConversation')}
               </button>
             </div>
             
@@ -112,7 +119,7 @@ export default function ChatHistory({
                 <div className="text-center py-8">
                   <div className="text-4xl mb-3">💬</div>
                   <p className="text-[#8FABD4] text-sm">
-                    {language === 'hr' ? 'Nema prethodnih razgovora' : 'No previous chats'}
+                    {t(language, 'noPreviousChats')}
                   </p>
                 </div>
               ) : (
@@ -139,7 +146,7 @@ export default function ChatHistory({
                           {session.title}
                         </p>
                         <p className="text-[#8FABD4]/70 text-xs mt-1">
-                          {formatDate(session.lastUpdated)} • {session.messages.length} {language === 'hr' ? 'poruka' : 'messages'}
+                          {formatDate(session.lastUpdated)} • {session.messages.length} {t(language, 'messages')}
                         </p>
                       </div>
                       
@@ -154,8 +161,8 @@ export default function ChatHistory({
                           }
                         `}
                         title={deleteConfirm === session.id 
-                          ? (language === 'hr' ? 'Klikni ponovo za brisanje' : 'Click again to delete')
-                          : (language === 'hr' ? 'Obriši' : 'Delete')
+                          ? t(language, 'clickToDelete')
+                          : t(language, 'delete')
                         }
                       >
                         {deleteConfirm === session.id ? '⚠️' : '🗑️'}
@@ -175,7 +182,7 @@ export default function ChatHistory({
             {sessions.length > 0 && (
               <div className="p-3 border-t border-[#4A70A9]/30">
                 <p className="text-[#8FABD4]/50 text-xs text-center">
-                  {sessions.length} {language === 'hr' ? 'razgovora spremljeno' : 'chats saved'}
+                  {sessions.length} {t(language, 'chatsCount')}
                 </p>
               </div>
             )}

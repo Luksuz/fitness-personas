@@ -6,6 +6,7 @@ import { TrainerPersona, UserProfile } from '@/lib/types';
 import { TRAINER_PERSONAS, getAllPersonas, getPersonaConfig } from '@/lib/personas';
 import { loadCustomTrainers, deleteCustomTrainer, CustomTrainer } from '@/lib/customTrainers';
 import { getRecommendedTrainers } from '@/lib/recommendations';
+import { t } from '@/lib/translations';
 import CreateCustomTrainerModal from './CreateCustomTrainerModal';
 
 interface TrainerSelectionProps {
@@ -18,6 +19,9 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
   const [customTrainers, setCustomTrainers] = useState<CustomTrainer[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTrainer, setEditingTrainer] = useState<CustomTrainer | null>(null);
+  
+  // Get language from profile, default to 'en'
+  const lang = profile?.language || 'en';
   
   // Get recommendations if profile exists
   const recommendations = profile ? getRecommendedTrainers(profile) : [];
@@ -35,7 +39,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
 
   const handleDeleteCustomTrainer = (e: React.MouseEvent, trainerId: string) => {
     e.stopPropagation();
-    if (confirm('Jeste li sigurni da želite obrisati ovog trenera?')) {
+    if (confirm(t(lang, 'deleteTrainerConfirm'))) {
       deleteCustomTrainer(trainerId);
       setCustomTrainers(loadCustomTrainers());
     }
@@ -60,7 +64,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
     <div className="max-w-6xl mx-auto w-full px-4 sm:w-[90%] lg:w-[80%] xl:w-[70%]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-6 sm:mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] bg-clip-text text-transparent">
-          Odaberi Trenera
+          {t(lang, 'selectTrainer')}
         </h2>
         <button
           onClick={() => {
@@ -69,14 +73,14 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
           }}
           className="px-4 py-2.5 sm:px-5 bg-gradient-to-r from-[#8FABD4] to-[#4A70A9] hover:from-[#A8C5E0] hover:to-[#8FABD4] text-[#EFECE3] font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-[#8FABD4]/30 hover:shadow-xl hover:shadow-[#8FABD4]/50 active:scale-95 min-h-[44px]"
         >
-          <span className="hidden sm:inline">+ Kreiraj Prilagođenog Trenera</span>
-          <span className="sm:hidden">+ Kreiraj</span>
+          <span className="hidden sm:inline">{t(lang, 'createCustomTrainer')}</span>
+          <span className="sm:hidden">{t(lang, 'createShort')}</span>
         </button>
       </div>
       
       {/* Built-in Trainers */}
       <div className="mb-8 sm:mb-12">
-        <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-[#8FABD4]">Ugrađeni Treneri</h3>
+        <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-[#8FABD4]">{t(lang, 'builtInTrainers')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
           {builtInTrainers.map((trainerId, index) => {
             const trainer = TRAINER_PERSONAS[trainerId];
@@ -104,7 +108,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
                   {/* Hover Tooltip */}
                   <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-black/95 backdrop-blur-sm border border-[#8FABD4]/50 rounded-lg shadow-xl opacity-0 invisible group-hover/badge:opacity-100 group-hover/badge:visible transition-all duration-200 pointer-events-none z-20">
                     <p className="text-xs font-semibold text-[#8FABD4] mb-2">
-                      {profile?.language === 'hr' ? 'Zašto preporučamo:' : 'Why recommended:'}
+                      {t(lang, 'whyRecommended')}
                     </p>
                     <ul className="space-y-1">
                       {recommendation.reasons.map((reason, idx) => (
@@ -141,7 +145,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
               <div className="p-4 sm:p-6">
                 <div className="space-y-2 mb-4 sm:mb-6">
                   <p className="text-xs sm:text-sm text-[#8FABD4]/70 font-semibold">
-                    Catchphrases:
+                    {t(lang, 'catchphrases')}
                   </p>
                   {trainer.catchphrases.slice(0, 2).map((phrase, idx) => (
                     <p key={idx} className="text-xs sm:text-sm text-[#EFECE3]/80 italic">
@@ -151,7 +155,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
                 </div>
                 
                 <button className="w-full bg-gradient-to-r from-[#8FABD4] via-[#6B9BC7] to-[#8FABD4] hover:from-[#A8C5E0] hover:via-[#8FABD4] hover:to-[#A8C5E0] text-[#EFECE3] font-semibold py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 transform group-hover:scale-105 active:scale-95 shadow-lg shadow-[#8FABD4]/30 hover:shadow-xl hover:shadow-[#8FABD4]/50 min-h-[44px] touch-manipulation">
-                  Odaberi {trainer.name.split(' ')[0]}
+                  {t(lang, 'select')} {trainer.name.split(' ')[0]}
                 </button>
               </div>
             </div>
@@ -163,7 +167,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
       {/* Custom Trainers */}
       {customTrainers.length > 0 && (
         <div className="mb-8 sm:mb-12">
-          <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-[#8FABD4]">Prilagođeni Treneri</h3>
+          <h3 className="text-lg sm:text-xl font-semibold mb-4 sm:mb-6 text-[#8FABD4]">{t(lang, 'customTrainers')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
             {customTrainers.map((trainer) => {
               return (
@@ -177,14 +181,14 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
                     <button
                       onClick={(e) => handleEditCustomTrainer(e, trainer)}
                       className="bg-[#4A70A9]/80 hover:bg-[#8FABD4]/80 active:bg-[#8FABD4] text-white p-2 sm:p-2.5 rounded-lg transition-all min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
-                      title="Uredi"
+                      title={t(lang, 'edit')}
                     >
                       ✏️
                     </button>
                     <button
                       onClick={(e) => handleDeleteCustomTrainer(e, trainer.id)}
                       className="bg-red-600/80 hover:bg-red-700/80 active:bg-red-700 text-white p-2 sm:p-2.5 rounded-lg transition-all min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation"
-                      title="Obriši"
+                      title={t(lang, 'delete')}
                     >
                       🗑️
                     </button>
@@ -218,7 +222,7 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
                   <div className="p-4 sm:p-6">
                     <div className="space-y-2 mb-4 sm:mb-6">
                       <p className="text-xs sm:text-sm text-[#8FABD4]/70 font-semibold">
-                        Catchphrases:
+                        {t(lang, 'catchphrases')}
                       </p>
                       {trainer.catchphrases.slice(0, 2).map((phrase, idx) => (
                         <p key={idx} className="text-xs sm:text-sm text-[#EFECE3]/80 italic">
@@ -227,13 +231,13 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
                       ))}
                       {trainer.catchphrases.length === 0 && (
                         <p className="text-xs sm:text-sm text-[#8FABD4]/50 italic">
-                          Nema catchphrases
+                          {t(lang, 'noCatchphrases')}
                         </p>
                       )}
                     </div>
                     
                     <button className="w-full bg-gradient-to-r from-[#8FABD4] via-[#6B9BC7] to-[#8FABD4] hover:from-[#A8C5E0] hover:via-[#8FABD4] hover:to-[#A8C5E0] text-[#EFECE3] font-semibold py-3 px-4 sm:px-6 rounded-xl transition-all duration-300 transform group-hover:scale-105 active:scale-95 shadow-lg shadow-[#8FABD4]/30 hover:shadow-xl hover:shadow-[#8FABD4]/50 min-h-[44px] touch-manipulation">
-                      Odaberi {trainer.name.split(' ')[0]}
+                      {t(lang, 'select')} {trainer.name.split(' ')[0]}
                     </button>
                   </div>
                 </div>
@@ -256,4 +260,3 @@ export default function TrainerSelection({ onSelect, profile }: TrainerSelection
     </div>
   );
 }
-

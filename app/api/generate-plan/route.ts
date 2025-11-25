@@ -5,16 +5,25 @@ import { getPersonaPrompt, getPersonaConfig } from '@/lib/personas';
 import { retrieveFoodsForProfile, calculateDailyCalories, calculateMacros } from '@/lib/rag';
 import { TrainerPersona, UserProfile } from '@/lib/types';
 import { ElevenLabsClient } from '@elevenlabs/elevenlabs-js';
+import { getLanguageName, Language } from '@/lib/translations';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Get language instruction for AI
+function getLanguageInstruction(language: Language): string {
+  const langName = getLanguageName(language);
+  return `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in ${langName}. Every single word of your response must be in ${langName}, including introMessage, outroMessage, and voice_recording_text. Do not use any other language words or phrases unless they are proper nouns or technical terms that have no translation.
+
+`;
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { userProfile, persona, planType, language: providedLanguage, systemPrompt: providedSystemPrompt } = await req.json();
     
     // Use provided language, fall back to userProfile.language, then default to 'en'
-    const language = providedLanguage || userProfile?.language || 'en';
+    const language: Language = providedLanguage || userProfile?.language || 'en';
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -53,20 +62,14 @@ async function generateWorkoutPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
   persona: TrainerPersona,
-  language: string = 'en',
+  language: Language = 'en',
   providedSystemPrompt?: string,
 ) {
   // Use provided system prompt (for custom trainers) or get from personas
   const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
   // CRITICAL: Language instruction comes FIRST so it's not ignored
-  const languageInstruction = language === 'hr' 
-    ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian, including introMessage, outroMessage, and voice_recording_text. Do not use any English words or phrases.
-
-`
-    : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English, including introMessage, outroMessage, and voice_recording_text. Do not use any Croatian or other language words or phrases.
-
-`;
+  const languageInstruction = getLanguageInstruction(language);
   
   // Prepend language instruction so it takes priority
   const systemPrompt = languageInstruction + baseSystemPrompt;
@@ -361,7 +364,7 @@ async function generateNutritionPlanStreaming(
   model: ChatAnthropic,
   userProfile: UserProfile,
   persona: TrainerPersona,
-  language: string = 'en',
+  language: Language = 'en',
   providedSystemPrompt?: string,
 ) {
   // First, retrieve relevant foods from Pinecone
@@ -378,13 +381,7 @@ async function generateNutritionPlanStreaming(
   const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona);
   
   // CRITICAL: Language instruction comes FIRST so it's not ignored
-  const languageInstruction = language === 'hr' 
-    ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian, including introMessage, outroMessage, and voice_recording_text. Do not use any English words or phrases.
-
-`
-    : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English, including introMessage, outroMessage, and voice_recording_text. Do not use any Croatian or other language words or phrases.
-
-`;
+  const languageInstruction = getLanguageInstruction(language);
   
   // Prepend language instruction so it takes priority
   const systemPrompt = languageInstruction + baseSystemPrompt;

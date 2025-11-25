@@ -6,12 +6,16 @@ import OnboardingWizard from '@/components/onboarding/OnboardingWizard';
 import TrainerSelection from '@/components/TrainerSelection';
 import { TrainerPersona, UserProfile } from '@/lib/types';
 import { loadUserProfile } from '@/lib/storage';
+import { t } from '@/lib/translations';
 
 export default function Home() {
   const router = useRouter();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get language from profile, default to 'en'
+  const lang = userProfile?.language || 'en';
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -42,12 +46,29 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Taglines in different languages
+  const getTagline = () => {
+    const taglines: Record<string, string> = {
+      en: 'Your personal trainer powered by AI',
+      hr: 'Vaš osobni trener pokretan AI-jem',
+      de: 'Ihr persönlicher KI-Trainer',
+      es: 'Tu entrenador personal impulsado por IA',
+      fr: 'Votre coach personnel propulsé par l\'IA',
+      it: 'Il tuo allenatore personale basato su IA',
+      pt: 'Seu personal trainer com IA',
+      nl: 'Jouw persoonlijke AI-trainer',
+      pl: 'Twój osobisty trener AI',
+      ru: 'Ваш персональный ИИ-тренер',
+    };
+    return taglines[lang] || taglines.en;
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-black via-[#1a1f2e] to-[#000000] text-[#EFECE3] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin text-4xl mb-4">⚙️</div>
-          <p className="text-[#8FABD4]">Loading...</p>
+          <p className="text-[#8FABD4]">{t(lang, 'loading')}</p>
         </div>
       </main>
     );
@@ -62,9 +83,7 @@ export default function Home() {
             AI Fitness Coach
           </h1>
           <p className="text-[#8FABD4] text-base sm:text-lg">
-            {showOnboarding 
-              ? (userProfile?.language === 'hr' ? 'Vaš osobni trener pokretaný AI' : 'Your personal trainer powered by AI')
-              : (userProfile?.language === 'hr' ? 'Vaš osobni trener pokretaný AI' : 'Your personal trainer powered by AI')}
+            {getTagline()}
           </p>
           
           {/* Edit Profile Button (only show when not in onboarding) */}
@@ -73,7 +92,7 @@ export default function Home() {
               onClick={handleResetProfile}
               className="mt-4 text-sm text-[#8FABD4] hover:text-[#EFECE3] transition-colors underline decoration-dashed underline-offset-4"
             >
-              {userProfile.language === 'hr' ? '✏️ Uredi profil' : '✏️ Edit profile'}
+              {t(lang, 'editProfile')}
             </button>
           )}
         </header>

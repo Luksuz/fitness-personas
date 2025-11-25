@@ -3,16 +3,25 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
 import { getPersonaPrompt } from '@/lib/personas';
 import { TrainerPersona } from '@/lib/types';
+import { getLanguageName, Language } from '@/lib/translations';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Get language instruction for AI
+function getLanguageInstruction(language: Language): string {
+  const langName = getLanguageName(language);
+  return `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in ${langName}. Every single word of your response must be in ${langName}. Do not use any other language words or phrases unless they are proper nouns or technical terms that have no translation.
+
+`;
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { messages, persona, userProfile, language: providedLanguage, systemPrompt: providedSystemPrompt } = await req.json();
     
     // Use provided language, fall back to userProfile.language, then default to 'en'
-    const language = providedLanguage || userProfile?.language || 'en';
+    const language: Language = providedLanguage || userProfile?.language || 'en';
 
     if (!process.env.ANTHROPIC_API_KEY) {
       return new Response(
@@ -33,13 +42,7 @@ export async function POST(req: NextRequest) {
     const baseSystemPrompt = providedSystemPrompt || getPersonaPrompt(persona as TrainerPersona);
     
     // CRITICAL: Language instruction comes FIRST so it's not ignored
-    const languageInstruction = language === 'hr' 
-      ? `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in Croatian (Hrvatski). Every single word of your response must be in Croatian. Do not use any English words or phrases.
-
-`
-      : `CRITICAL LANGUAGE REQUIREMENT: You MUST respond ONLY in English. Every single word of your response must be in English. Do not use any Croatian or other language words or phrases.
-
-`;
+    const languageInstruction = getLanguageInstruction(language);
     
     // Prepend language instruction so it takes priority
     let fullSystemPrompt = languageInstruction + baseSystemPrompt;

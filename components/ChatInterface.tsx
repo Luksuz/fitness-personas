@@ -18,7 +18,9 @@ import {
   getActiveSessionId,
   setActiveSession,
   deleteChatSession,
+  clearTrainerChatHistory,
 } from '@/lib/storage';
+import { Language, t, LANGUAGE_CONFIG } from '@/lib/translations';
 import MealCard from './MealCard';
 import MealModal from './MealModal';
 import WorkoutCard from './WorkoutCard';
@@ -49,7 +51,7 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
   const [currentProfile, setCurrentProfile] = useState<UserProfile>(userProfile);
   const [voiceRecordingStatus, setVoiceRecordingStatus] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
   const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'en' | 'hr'>(userProfile.language || 'en');
+  const [language, setLanguage] = useState<Language>(userProfile.language || 'en');
   const [activeTab, setActiveTab] = useState<'workout' | 'nutrition'>('nutrition');
   const [mobileView, setMobileView] = useState<'chat' | 'workout' | 'nutrition'>('chat');
   // Chat history state
@@ -180,12 +182,16 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
     hasGeneratedGreeting.current = false;
     setMessages([]);
     // Clear saved conversation and plans when regenerating
-    clearConversation(trainer);
+    clearTrainerChatHistory(trainer);
     clearPlans(trainer);
     // Reset plan data
     setWorkoutData(null);
     setNutritionData(null);
     setDailyTargets(null);
+    // Create new session
+    const newSessionId = createNewChatSession(trainer);
+    setActiveSessionId(newSessionId);
+    setChatHistory([]);
   };
 
   // Generate initial greeting message
@@ -717,53 +723,35 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              {/* Language Selector */}
-              <div className="flex items-center gap-1 bg-black/50 border border-[#4A70A9]/50 rounded-lg overflow-hidden">
-                <button
-                  onClick={() => {
-                    setLanguage('en');
-                    // Also update the profile so language persists
-                    const updatedProfile = { ...currentProfile, language: 'en' as const };
-                    setCurrentProfile(updatedProfile);
-                    if (onProfileUpdate) {
-                      onProfileUpdate(updatedProfile);
-                    }
-                  }}
-                  className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
-                    language === 'en'
-                      ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
-                      : 'text-[#8FABD4] hover:text-[#EFECE3]'
-                  }`}
-                >
-                  EN
-                </button>
-                <div className="w-px h-4 bg-[#4A70A9]/50"></div>
-                <button
-                  onClick={() => {
-                    setLanguage('hr');
-                    // Also update the profile so language persists
-                    const updatedProfile = { ...currentProfile, language: 'hr' as const };
-                    setCurrentProfile(updatedProfile);
-                    if (onProfileUpdate) {
-                      onProfileUpdate(updatedProfile);
-                    }
-                  }}
-                  className={`px-2 sm:px-2.5 py-1 font-semibold text-xs transition-all duration-300 touch-manipulation active:scale-95 ${
-                    language === 'hr'
-                      ? 'bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] text-[#EFECE3]'
-                      : 'text-[#8FABD4] hover:text-[#EFECE3]'
-                  }`}
-                >
-                  HR
-                </button>
-              </div>
+              {/* Language Selector Dropdown */}
+              <select
+                value={language}
+                onChange={(e) => {
+                  const newLang = e.target.value as Language;
+                  setLanguage(newLang);
+                  // Also update the profile so language persists
+                  const updatedProfile = { ...currentProfile, language: newLang };
+                  setCurrentProfile(updatedProfile);
+                  if (onProfileUpdate) {
+                    onProfileUpdate(updatedProfile);
+                  }
+                }}
+                className="px-2 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs text-[#EFECE3] transition-all duration-300 touch-manipulation cursor-pointer outline-none focus:ring-2 focus:ring-[#8FABD4]/50"
+                title={t(language, 'preferredLanguage')}
+              >
+                {(Object.keys(LANGUAGE_CONFIG) as Language[]).map((lang) => (
+                  <option key={lang} value={lang} className="bg-black text-[#EFECE3]">
+                    {LANGUAGE_CONFIG[lang].flag} {LANGUAGE_CONFIG[lang].nativeName}
+                  </option>
+                ))}
+              </select>
               {/* Chat History Button */}
               <button
                 onClick={() => setIsHistoryOpen(true)}
                 className="px-2 sm:px-3 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95 relative"
-                title={language === 'hr' ? 'Povijest razgovora' : 'Chat history'}
+                title={t(language, 'chatHistory')}
               >
-                <span className="hidden sm:inline">📜 {language === 'hr' ? 'Povijest' : 'History'}</span>
+                <span className="hidden sm:inline">📜 {t(language, 'history')}</span>
                 <span className="sm:hidden">📜</span>
                 {chatHistory.length > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-[#4A70A9] to-[#8FABD4] rounded-full text-[10px] flex items-center justify-center text-[#EFECE3] font-bold">
@@ -775,25 +763,25 @@ export default function ChatInterface({ trainer, userProfile, onReset, onProfile
               <button
                 onClick={handleNewChat}
                 className="px-2 sm:px-3 py-1.5 bg-gradient-to-r from-[#4A70A9]/50 to-[#8FABD4]/50 hover:from-[#4A70A9] hover:to-[#8FABD4] border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95"
-                title={language === 'hr' ? 'Novi razgovor' : 'New chat'}
+                title={t(language, 'newChat')}
               >
-                <span className="hidden sm:inline">✨ {language === 'hr' ? 'Novi' : 'New'}</span>
+                <span className="hidden sm:inline">✨ {t(language, 'newShort')}</span>
                 <span className="sm:hidden">✨</span>
               </button>
               <button
                 onClick={() => setIsProfileModalOpen(true)}
                 className="px-2 sm:px-3 py-1.5 bg-black/50 border border-[#4A70A9]/50 hover:border-[#8FABD4]/50 rounded-lg font-semibold text-xs transition-all duration-300 text-[#EFECE3] touch-manipulation active:scale-95"
-                title="Edit Profile"
+                title={t(language, 'profile')}
               >
-                <span className="hidden sm:inline">⚙️ Profile</span>
+                <span className="hidden sm:inline">⚙️ {t(language, 'profile')}</span>
                 <span className="sm:hidden">⚙️</span>
               </button>
               <button
                 onClick={onReset}
                 className="px-2 sm:px-3 py-1.5 bg-black/50 hover:bg-black border border-[#4A70A9]/50 hover:border-[#8FABD4] rounded-lg text-xs font-medium transition-all duration-300 hover:scale-105 active:scale-95 text-[#EFECE3] touch-manipulation"
               >
-                <span className="hidden sm:inline">Change Trainer</span>
-                <span className="sm:hidden">Change</span>
+                <span className="hidden sm:inline">{t(language, 'changeTrainer')}</span>
+                <span className="sm:hidden">{t(language, 'change')}</span>
               </button>
             </div>
           </div>

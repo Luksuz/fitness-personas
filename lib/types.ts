@@ -19,9 +19,11 @@ export interface FoodItem {
   servingSizeUnit?: string;
 }
 
+import { Language } from './translations';
+
 export interface UserProfile {
   name: string;
-  language: 'en' | 'hr';
+  language: Language;
   height: number; // in cm
   weight: number; // in kg
   age: number;
